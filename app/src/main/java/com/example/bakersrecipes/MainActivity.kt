@@ -16,6 +16,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -24,9 +25,9 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.bakersrecipes.data.Recipe
-import com.example.bakersrecipes.data.relations.RecipeWithIngredients
-import com.example.bakersrecipes.ui.BakersRecipeHome
-import com.example.bakersrecipes.ui.RecipeDetailScreen
+import com.example.bakersrecipes.ui.detail.DetailViewModel
+import com.example.bakersrecipes.ui.home.BakersRecipeHome
+import com.example.bakersrecipes.ui.detail.RecipeDetailScreen
 import com.example.bakersrecipes.ui.theme.BakersRecipesTheme
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -76,22 +77,14 @@ fun BakersRecipeApp(viewModel: RecipeViewModel = viewModel())
             // TODO: Navigate to detail
             composable(
                 BakersRecipesDestinations.Detail.name+"/{recipeId}",
-                arguments =
-                listOf(
+                arguments = listOf(
                     navArgument("recipeId") {
                         type = NavType.IntType
                     }
                 )
             ) { backstackEntry ->
-                val recipeId = backstackEntry.arguments?.getInt("recipeId") ?: -1
-                val recipe: RecipeWithIngredients
-                        by viewModel.getRecipeWithIngredientsById(recipeId).collectAsState(
-                            initial = RecipeWithIngredients(
-                                Recipe(-1,"null"),
-                                listOf()
-                            )
-                        )
-                RecipeDetailScreen(recipe)
+                val detailViewModel: DetailViewModel = hiltViewModel()
+                RecipeDetailScreen(detailViewModel)
             }
         }
 

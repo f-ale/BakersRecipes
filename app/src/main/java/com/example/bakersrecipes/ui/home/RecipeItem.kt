@@ -1,4 +1,4 @@
-package com.example.bakersrecipes.ui
+package com.example.bakersrecipes.ui.home
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable

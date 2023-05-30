@@ -1,4 +1,4 @@
-package com.example.bakersrecipes.ui
+package com.example.bakersrecipes.ui.detail
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -11,13 +11,18 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.example.bakersrecipes.data.Ingredient
 import com.example.bakersrecipes.ui.theme.Typography
 
-
+@Preview
 @Composable
-fun IngredientList(ingredients: List<Ingredient>)
+fun IngredientListPreview()
+{
+    IngredientList(listOf(Pair("",1f)), false)
+}
+@Composable
+fun IngredientList(ingredients: List<Pair<String, Float>>, showWeight: Boolean)
 {
     Card(modifier = Modifier
         .fillMaxWidth()
@@ -26,8 +31,7 @@ fun IngredientList(ingredients: List<Ingredient>)
         Column(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
-        )
-        {
+        ) {
             Text(
                 "Ingredients",
                 style = Typography.titleMedium
@@ -36,11 +40,14 @@ fun IngredientList(ingredients: List<Ingredient>)
             if(ingredients.isNotEmpty()) {
                 LazyColumn {
                     items(ingredients) {
-                            ingredient: Ingredient ->
+                            ingredient: Pair<String,Float> ->
                         RecipeIngredient(
-                            name = ingredient.name,
-                            percent = ingredient.percent,
-                            modifier = Modifier.padding(horizontal = 16.dp)
+                            name = ingredient.first,
+                            number = if(showWeight) {ingredient.second} else {
+                              ingredient.second * 100
+                            },
+                            modifier = Modifier.padding(horizontal = 16.dp),
+                            showWeight = showWeight
                         )
                     }
                 }
@@ -53,7 +60,6 @@ fun IngredientList(ingredients: List<Ingredient>)
                     style = Typography.bodyMedium
                 )
             }
-
         }
     }
 }

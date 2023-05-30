@@ -1,4 +1,4 @@
-package com.example.bakersrecipes.ui
+package com.example.bakersrecipes.ui.home
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.fillMaxSize
