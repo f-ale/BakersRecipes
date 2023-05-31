@@ -1,6 +1,5 @@
 package com.example.bakersrecipes.data
 
-import androidx.lifecycle.LiveData
 import androidx.room.ColumnInfo
 import androidx.room.Dao
 import androidx.room.Delete
@@ -11,8 +10,8 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.PrimaryKey
 import androidx.room.Query
+import androidx.room.Upsert
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.StateFlow
 
 @Entity(
     tableName = "ingredients",
@@ -26,7 +25,7 @@ import kotlinx.coroutines.flow.StateFlow
 )
 data class Ingredient(
     @PrimaryKey(autoGenerate = true)
-    val id:Int,
+    val id:Int?,
     @ColumnInfo(index = true)
     val recipeId:Int,
     val name:String,
@@ -41,12 +40,17 @@ interface IngredientDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertIngredients(vararg ingredients: Ingredient)
 
+    @Upsert
+    suspend fun insertOrUpdateIngredients(vararg ingredients: Ingredient)
+
     @Delete
     suspend fun delete(ingredient: Ingredient)
 
+    @Delete
+    suspend fun deleteIngredients(vararg ingredients: Ingredient)
+
     @Query("SELECT * FROM ingredients")
     fun getAllIngredients(): List<Ingredient>
-
 
     @Query("SELECT * FROM ingredients WHERE recipeId = :recipeId ORDER BY percent DESC")
     fun getIngredientsForRecipe(recipeId: Int): Flow<List<Ingredient>>

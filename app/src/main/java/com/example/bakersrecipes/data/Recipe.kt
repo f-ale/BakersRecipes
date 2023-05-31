@@ -1,7 +1,5 @@
 package com.example.bakersrecipes.data
 
-import android.net.Uri
-import androidx.lifecycle.LiveData
 import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Entity
@@ -10,9 +8,9 @@ import androidx.room.OnConflictStrategy
 import androidx.room.PrimaryKey
 import androidx.room.Query
 import androidx.room.Transaction
+import androidx.room.Upsert
 import com.example.bakersrecipes.data.relations.RecipeWithIngredients
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.StateFlow
 
 @Entity(tableName="recipes")
 data class Recipe(
@@ -24,6 +22,8 @@ data class Recipe(
 interface RecipeDao {
     @Insert
     suspend fun insert(recipe: Recipe)
+    @Upsert
+    suspend fun insertOrUpdate(recipe: Recipe): Long
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertRecipes(vararg recipes: Recipe)
     @Delete

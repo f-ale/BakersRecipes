@@ -20,7 +20,7 @@ class DetailViewModel @Inject constructor(
     private val db:RecipeDatabase,
     savedStateHandle: SavedStateHandle
 ): ViewModel() {
-    private val recipeId:Int = savedStateHandle.get<Int>("recipeId") ?: -1
+    val recipeId:Int = savedStateHandle.get<Int>("recipeId") ?: -1
     private val _recipeDetailState = MutableStateFlow(RecipeDetailState())
     private var ingredients: List<Ingredient> = listOf()
 
@@ -33,7 +33,7 @@ class DetailViewModel @Inject constructor(
                     recipe = recipe.recipe,
                     ingredientDisplayList = recipe.ingredients.map {
                         ingredient -> Pair(ingredient.name, ingredient.percent)
-                    }
+                    }.sortedByDescending { it.second }
                 )
                 // We want ingredients to be sorted by highest percentage
                 ingredients = recipe.ingredients.sortedByDescending { it.percent }

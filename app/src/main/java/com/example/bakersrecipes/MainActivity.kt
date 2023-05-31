@@ -28,6 +28,8 @@ import com.example.bakersrecipes.data.Recipe
 import com.example.bakersrecipes.ui.detail.DetailViewModel
 import com.example.bakersrecipes.ui.home.BakersRecipeHome
 import com.example.bakersrecipes.ui.detail.RecipeDetailScreen
+import com.example.bakersrecipes.ui.edit.EditRecipeScreen
+import com.example.bakersrecipes.ui.edit.EditRecipeViewModel
 import com.example.bakersrecipes.ui.theme.BakersRecipesTheme
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -53,7 +55,7 @@ enum class BakersRecipesDestinations()
 fun BakersRecipeApp(viewModel: RecipeViewModel = viewModel())
 {
     val navController = rememberNavController()
-    val recipes by viewModel.getAllRecipes().collectAsState(initial = emptyList())
+    val recipes by viewModel.getAllRecipes().collectAsState(initial = emptyList()) // TODO: Move to bakersrecipehome
 
     val backStackEntry by navController.currentBackStackEntryAsState()
 
@@ -82,9 +84,30 @@ fun BakersRecipeApp(viewModel: RecipeViewModel = viewModel())
                         type = NavType.IntType
                     }
                 )
-            ) { backstackEntry ->
+            ) {
                 val detailViewModel: DetailViewModel = hiltViewModel()
-                RecipeDetailScreen(detailViewModel)
+                RecipeDetailScreen(
+                    detailViewModel,
+                    onEditRecipe = {
+                            recipeId -> navController.navigate(BakersRecipesDestinations.Edit.name+"/$recipeId")
+                    }
+                )
+            }
+
+            composable(
+                BakersRecipesDestinations.Edit.name+"/{recipeId}",
+                arguments = listOf(
+                    navArgument("recipeId") {
+                        type = NavType.IntType
+                    }
+                )
+            ) {
+                val editRecipeViewModel: EditRecipeViewModel = hiltViewModel()
+
+                EditRecipeScreen(
+                    editRecipeViewModel,
+                    { navController.navigateUp() }
+                )
             }
         }
 
