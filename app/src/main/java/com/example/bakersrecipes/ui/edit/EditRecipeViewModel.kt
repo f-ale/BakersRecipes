@@ -1,8 +1,10 @@
 package com.example.bakersrecipes.ui.edit
 
+import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.room.withTransaction
 import com.example.bakersrecipes.data.Ingredient
 import com.example.bakersrecipes.data.Recipe
 import com.example.bakersrecipes.data.RecipeDatabase
@@ -47,41 +49,54 @@ class EditRecipeViewModel @Inject constructor(
         }
     }
 
-    fun saveChanges() // TODO: :Boolean
+    fun saveChanges(): Boolean
     {
-        viewModelScope.launch {
-            val recipeId: Int? = recipe?.recipe?.id
+        val validForm = editRecipeState.value.ingredients.all {
+            it.percent != null && it.name != null
+        }
 
-            val newRecipe =
-                Recipe(
-                    recipeId,
-                    editRecipeState.value.title ?: "Untitled"
-                )
+        if(validForm) {
+            viewModelScope.launch {
+                db.withTransaction {
+                    val recipeId: Int? = recipe?.recipe?.id
 
-            db.recipeDao().insertOrUpdate(newRecipe)
+                    val newRecipe =
+                        Recipe(
+                            recipeId,
+                            editRecipeState.value.title ?: "Untitled"
+                        )
 
-            val ingredientsToUpdate = editRecipeState.value.ingredients.map {
-                field ->
-                Ingredient(
-                    id = field.ingredientId,
-                    recipeId = recipeId ?: 1, // TODO: No, get the new id from query
-                    name = field.name ?: "Untitled",
-                    percent = field.percent ?: 0f,
-                )
+                    db.recipeDao().insertOrUpdate(newRecipe)
+
+                    val ingredientDao = db.ingredientDao()
+                    val ingredientsToRemove = editRecipeState.value
+                        .removedIngredients.map{ it.ingredientId ?: -1 }
+
+                    ingredientDao.deleteIngredientsById(*ingredientsToRemove.toIntArray())
+
+                    val ingredientsToUpdate = editRecipeState.value.ingredients.map {
+                            field ->
+                        Ingredient(
+                            id = field.ingredientId,
+                            recipeId = recipeId ?: 1, // TODO: No, get the new id from query
+                            name = field.name ?: "Untitled",
+                            percent = field.percent ?: 0f,
+                        )
+                    }
+
+                    Log.d("BAKERSW", ingredientsToUpdate.joinToString(","))
+
+                    // TODO: Check if ingredients are ok
+
+                    ingredientDao.insertOrUpdateIngredients(*ingredientsToUpdate.toTypedArray())
+                }
             }
-
-            // TODO: Check if ingredients are ok
-
-            db.ingredientDao().insertOrUpdateIngredients(*ingredientsToUpdate.toTypedArray())
         }
 
         // TODO: Save recipe description
 
-        // TODO: Remove removed ingredients
-
         // TODO: Handle new recipe
-
-        // TODO: Check if fields are valid before saving
+        return validForm
     }
 
     fun newIngredient()
@@ -92,21 +107,14 @@ class EditRecipeViewModel @Inject constructor(
         )
     }
 
-    fun updateIngredient(editRecipeIngredientField: EditRecipeIngredientField)
+    fun updateIngredient(index: Int, new:EditRecipeIngredientField)
     {
         val mutableIngredientList = _editRecipeState.value.ingredients.toMutableList()
 
-        mutableIngredientList[mutableIngredientList.indexOfFirst
-        { it.ingredientId == editRecipeIngredientField.ingredientId }] =
-            EditRecipeIngredientField(
-                ingredientId = editRecipeIngredientField.ingredientId,
-                name = editRecipeIngredientField.name,
-                percent = editRecipeIngredientField.percent
-            )
+        mutableIngredientList[index] = new
 
         _editRecipeState.value = _editRecipeState.value.copy(
             ingredients = mutableIngredientList.toList()
-
         )
     }
 
@@ -120,14 +128,13 @@ class EditRecipeViewModel @Inject constructor(
         _editRecipeState.value = _editRecipeState.value.copy(description = newDescription)
     }
 
-    fun removeIngredient(fieldIndex:Int)
+    fun removeIngredient(ingredient:EditRecipeIngredientField)
     {
         val mutableIngredientList = _editRecipeState.value.ingredients.toMutableList()
-        val removedIngredient = mutableIngredientList[fieldIndex]
-        mutableIngredientList.removeAt(fieldIndex)
+        mutableIngredientList.remove(ingredient)
 
         val mutableRemovedIngredientList = _editRecipeState.value.removedIngredients.toMutableList()
-        mutableRemovedIngredientList.add(removedIngredient)
+        mutableRemovedIngredientList.add(ingredient)
 
         _editRecipeState.value = _editRecipeState.value.copy(
             ingredients = mutableIngredientList,

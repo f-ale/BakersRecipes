@@ -49,6 +49,9 @@ interface IngredientDao {
     @Delete
     suspend fun deleteIngredients(vararg ingredients: Ingredient)
 
+    @Query("DELETE FROM ingredients WHERE id IN (:ingredientId)")
+    suspend fun deleteIngredientsById(vararg ingredientId:Int)
+
     @Query("SELECT * FROM ingredients")
     fun getAllIngredients(): List<Ingredient>
 

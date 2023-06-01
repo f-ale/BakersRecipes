@@ -10,11 +10,13 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -61,12 +63,14 @@ fun EditRecipeScreen( // TODO: Make scrollable
             )
             EditableIngredientList(
                 ingredients = editRecipeState.ingredients,
-                onEditFieldValueChange = { viewModel.updateIngredient(it) }
+                onEditFieldValueChange = { index, new ->
+                    viewModel.updateIngredient(index, new)
+                },
+                onDeleteIngredient = { viewModel.removeIngredient(it)}
             )
-
             Button(onClick = { // TODO: Only save if fields are valid
-                viewModel.saveChanges() // return false if fields are invalid
-                onSaveEdits()
+                val valid = viewModel.saveChanges() // return false if fields are invalid
+                if(valid) onSaveEdits()
             }) {
                 Text("Save")
             }
@@ -82,20 +86,32 @@ fun EditRecipeScreen( // TODO: Make scrollable
 fun EditableIngredientList(
     ingredients: List<EditRecipeIngredientField>,
     modifier: Modifier = Modifier,
-    onEditFieldValueChange: (EditRecipeIngredientField) -> Unit,
+    onEditFieldValueChange: (Int, EditRecipeIngredientField) -> Unit,
+    onDeleteIngredient: (EditRecipeIngredientField) -> Unit
 ) {
     Column(modifier = modifier) {
-        ingredients.forEach {
-            ingredient ->
+        ingredients.forEachIndexed {
+            index, ingredientField ->
             IngredientEditField(
-                name = ingredient.name ?: "",
-                percent = ingredient.percent?.times(100)?.roundToInt() ?: 0,
+                name = ingredientField.name ?: "",
+                percent = ingredientField.percent?.times(100)?.roundToInt() ?: 0,
                 Icons.Outlined.Edit,
-                { onEditFieldValueChange(
-                    ingredient.copy(
-                        name = it.first ?: ingredient.name,
-                        percent = it.second?.toFloatOrNull()?.div(100) ?: ingredient.percent
-                    )) },
+                { it ->
+                    it.first?.let { onEditFieldValueChange(
+                        index,
+                        ingredientField.copy(
+                            name = it,
+                        )) }
+
+                    it.second?.let { onEditFieldValueChange(
+                        index,
+                        ingredientField.copy(
+                            percent = it.toFloatOrNull()?.div(100) ?: 0f,
+                        )) }
+
+                    // TODO: Change how percent is handled... it should be a string
+                 },
+                onDeleteIngredient = { onDeleteIngredient(ingredientField) }
             )
         }
     }
@@ -108,6 +124,7 @@ fun IngredientEditField(
     percent:Int,
     icon: ImageVector,
     onValueChange: (Pair<String?, String?>) -> Unit,
+    onDeleteIngredient: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     // TODO: Warn if percentage = 0
@@ -139,11 +156,11 @@ fun IngredientEditField(
             keyboardOptions = KeyboardOptions.Default
                 .copy(keyboardType = KeyboardType.Number)
         )
-        Spacer(modifier = Modifier.width(32.dp))
+        IconButton(onClick = onDeleteIngredient) {
+            Icon(Icons.Outlined.Delete, "")
+        }
     }
 }
-
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TextEditField(
