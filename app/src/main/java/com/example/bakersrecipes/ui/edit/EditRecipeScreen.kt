@@ -1,85 +1,140 @@
 package com.example.bakersrecipes.ui.edit
 
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.outlined.Delete
-import androidx.compose.material.icons.outlined.Edit
-import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.Button
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import kotlin.math.roundToInt
+import com.example.bakersrecipes.ui.common.BackButton
 
-/*@Preview
-@Composable
-fun EditRecipeScreenPreview()
-{
-    BakersRecipesTheme {
-        EditRecipeScreen()
-    }
-}*/
-
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditRecipeScreen( // TODO: Make scrollable
     viewModel: EditRecipeViewModel,
     onSaveEdits: () -> Unit,
-    modifier: Modifier = Modifier)
-{
+    onNavigateUp: () -> Unit,
+    onRecipeDelete: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     val editRecipeState: EditRecipeState by viewModel.editRecipeState.collectAsState()
+    var overflowMenuExpanded by remember { mutableStateOf(false) }
+    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
+    //TODO: Handle scaffold state
+    Scaffold(
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        topBar = {
+            TopAppBar({ Text("Edit Recipe") },
+                actions = {
+                    Button(onClick = {
+                        val valid = viewModel.saveChanges()
+                        if (valid) onSaveEdits()
+                        // TODO: Show warning if conditions to save not met
+                    }) {
+                        Text("Save")
+                    }
 
-    Surface(modifier = modifier.fillMaxSize()) {
-        Column {
-            TextEditField(
-                editRecipeState.title ?: "",
-                "Title",
-                Icons.Outlined.Info,
-                onValueChange = { viewModel.updateName(it) }
-            )
-            TextEditField(
-                editRecipeState.description ?: "",
-                "Description",
-                Icons.Outlined.Info,
-                onValueChange = { viewModel.updateDescription(it) }
-            )
-            EditableIngredientList(
-                ingredients = editRecipeState.ingredients,
-                onEditFieldValueChange = { index, new ->
-                    viewModel.updateIngredient(index, new)
+                    IconButton(onClick = {
+                        overflowMenuExpanded = !overflowMenuExpanded
+                    }) {
+                        Icon(Icons.Filled.MoreVert, "More")
+                        DropdownMenu(
+                            expanded = overflowMenuExpanded,
+                            onDismissRequest = { overflowMenuExpanded = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("Delete") },
+                                onClick = {
+                                    // TODO: Move to trash instead of permanent delete
+                                    viewModel.deleteRecipe()
+                                    onRecipeDelete()
+                                }
+                            )
+                        }
+                    }
                 },
-                onDeleteIngredient = { viewModel.removeIngredient(it)}
-            )
-            Button(onClick = { // TODO: Only save if fields are valid
-                val valid = viewModel.saveChanges() // return false if fields are invalid
-                if(valid) onSaveEdits()
-            }) {
-                Text("Save")
-            }
-
-            Button(onClick = { viewModel.newIngredient() }) {
-                Text("New Ingredient")
+                navigationIcon = {
+                    BackButton(onClick = onNavigateUp)
+                })
+        },
+        floatingActionButton = {
+            FloatingActionButton(onClick = { viewModel.newIngredient() }) {
+                Icon(Icons.Filled.Add, "New Ingredient")
             }
         }
+    ) { paddingValues ->
+        Surface(
+            modifier = modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+        ) {
+                EditableIngredientList(
+                    header = {
+                        TextEditField(
+                            editRecipeState.title ?: "",
+                            "Title",
+                            onValueChange = { viewModel.updateName(it) }
+                        )
+                        TextEditField(
+                            editRecipeState.description ?: "",
+                            "Description",
+                            onValueChange = { viewModel.updateDescription(it) }
+                        )
+                        Text(
+                            "Ingredients",
+                            style = MaterialTheme.typography.bodyLarge,
+                            modifier = Modifier.padding(
+                                horizontal = 18.dp,
+                                vertical = 8.dp
+                            )
+                        )
+                    },
+                    ingredients = editRecipeState.ingredients,
+                    onEditFieldValueChange = { index, new ->
+                        viewModel.updateIngredient(index, new)
+                    },
+                    onDeleteIngredient = { viewModel.removeIngredient(it) }
+                )
+        }
     }
+
 }
 
 @Composable
@@ -87,32 +142,43 @@ fun EditableIngredientList(
     ingredients: List<EditRecipeIngredientField>,
     modifier: Modifier = Modifier,
     onEditFieldValueChange: (Int, EditRecipeIngredientField) -> Unit,
-    onDeleteIngredient: (EditRecipeIngredientField) -> Unit
+    onDeleteIngredient: (EditRecipeIngredientField) -> Unit,
+    header: @Composable LazyItemScope.() -> Unit
 ) {
-    Column(modifier = modifier) {
-        ingredients.forEachIndexed {
-            index, ingredientField ->
+    LazyColumn(modifier = modifier)
+    {
+        item(content = header)
+        items(ingredients.size) { index ->
+            val ingredientField = ingredients[index]
             IngredientEditField(
                 name = ingredientField.name ?: "",
-                percent = ingredientField.percent?.times(100)?.roundToInt() ?: 0,
-                Icons.Outlined.Edit,
-                { it ->
-                    it.first?.let { onEditFieldValueChange(
-                        index,
-                        ingredientField.copy(
-                            name = it,
-                        )) }
+                percent = ingredientField.percent ?: "",
+                onValueChange = { it ->
+                    it.first?.let {
+                        onEditFieldValueChange(
+                            index,
+                            ingredientField.copy(
+                                name = it,
+                            )
+                        )
+                    }
 
-                    it.second?.let { onEditFieldValueChange(
-                        index,
-                        ingredientField.copy(
-                            percent = it.toFloatOrNull()?.div(100) ?: 0f,
-                        )) }
+                    it.second?.let {
+                        onEditFieldValueChange(
+                            index,
+                            ingredientField.copy(
+                                percent = it,
+                            )
+                        )
+                    }
 
                     // TODO: Change how percent is handled... it should be a string
-                 },
+                },
                 onDeleteIngredient = { onDeleteIngredient(ingredientField) }
             )
+        }
+        item {
+            Spacer(Modifier.height(64.dp))
         }
     }
 }
@@ -121,69 +187,70 @@ fun EditableIngredientList(
 @Composable
 fun IngredientEditField(
     name: String,
-    percent:Int,
-    icon: ImageVector,
+    percent: String,
     onValueChange: (Pair<String?, String?>) -> Unit,
     onDeleteIngredient: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    icon: ImageVector? = null,
 ) {
     // TODO: Warn if percentage = 0
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
     ) {
-        Icon(
+        icon?.let {
+            Icon(
             icon,
             name,
             modifier = Modifier
                 .padding(horizontal = 12.dp)
                 .size(32.dp)
                 .offset(y = 3.dp)
-        )
+        ) }
+        Spacer(modifier = Modifier.width(16.dp))
         OutlinedTextField(
             name,
             onValueChange = { onValueChange(Pair(it, null)) },
             label = { Text("Ingredient") },
-            modifier = Modifier.width(154.dp)
+            modifier = Modifier.weight(1f),
+            isError = name == ""
         )
-        Spacer(modifier = Modifier.width(16.dp))
+        Spacer(modifier = Modifier.width(8.dp))
         OutlinedTextField(
-            percent.toString(),
+            percent,
             onValueChange = { onValueChange(Pair(null, it)) },
             label = { Text("Percentage") },
             trailingIcon = { Text("%") },
-            modifier = Modifier.width(154.dp),
+            modifier = Modifier.weight(1f),
             keyboardOptions = KeyboardOptions.Default
-                .copy(keyboardType = KeyboardType.Number)
+                .copy(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
+            isError = percent == ""
         )
         IconButton(onClick = onDeleteIngredient) {
-            Icon(Icons.Outlined.Delete, "")
+            Icon(
+                Icons.Outlined.Delete,
+                "Delete",
+                Modifier.size(64.dp).padding(8.dp)
+            )
         }
     }
 }
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TextEditField(
     name: String,
     label: String,
-    icon: ImageVector,
     onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Row(verticalAlignment = Alignment.CenterVertically, modifier = modifier) {
-        Icon(
-            icon,
-            name,
-            modifier = Modifier
-                .padding(horizontal = 12.dp)
-                .size(32.dp)
-                .offset(y = 3.dp)
-        )
         OutlinedTextField(
             name,
             onValueChange = onValueChange,
-            label = { Text(label) }
+            label = { Text(label) },
+            modifier = modifier.fillMaxWidth().padding(
+                vertical = 4.dp,
+                horizontal = 12.dp
+            )
         )
-        Spacer(modifier = Modifier.width(32.dp))
-    }
 }

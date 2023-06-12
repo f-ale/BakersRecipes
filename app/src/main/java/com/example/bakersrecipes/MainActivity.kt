@@ -2,20 +2,10 @@ package com.example.bakersrecipes
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
@@ -24,12 +14,11 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.example.bakersrecipes.data.Recipe
 import com.example.bakersrecipes.ui.detail.DetailViewModel
-import com.example.bakersrecipes.ui.home.BakersRecipeHome
 import com.example.bakersrecipes.ui.detail.RecipeDetailScreen
 import com.example.bakersrecipes.ui.edit.EditRecipeScreen
 import com.example.bakersrecipes.ui.edit.EditRecipeViewModel
+import com.example.bakersrecipes.ui.home.BakersRecipeHome
 import com.example.bakersrecipes.ui.theme.BakersRecipesTheme
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -49,7 +38,8 @@ enum class BakersRecipesDestinations()
 {
     Home,
     Detail,
-    Edit
+    Edit,
+    New
 }
 @Composable
 fun BakersRecipeApp(viewModel: RecipeViewModel = viewModel())
@@ -68,10 +58,11 @@ fun BakersRecipeApp(viewModel: RecipeViewModel = viewModel())
                 BakersRecipeHome(
                     recipes = recipes,
                     onAddRecipe = {
-                        viewModel.insertRecipe(Recipe(name = "test"))
+                            navController.navigate(BakersRecipesDestinations.New.name)
                     },
                     onRecipeClicked = {
-                            recipeId -> navController.navigate(BakersRecipesDestinations.Detail.name+"/$recipeId")
+                            recipeId -> navController.navigate(
+                        BakersRecipesDestinations.Detail.name+"/$recipeId")
                     }
                 )
             }
@@ -88,6 +79,7 @@ fun BakersRecipeApp(viewModel: RecipeViewModel = viewModel())
                 val detailViewModel: DetailViewModel = hiltViewModel()
                 RecipeDetailScreen(
                     detailViewModel,
+                    onNavigateUp = { navController.navigateUp() },
                     onEditRecipe = {
                             recipeId -> navController.navigate(BakersRecipesDestinations.Edit.name+"/$recipeId")
                     }
@@ -106,24 +98,26 @@ fun BakersRecipeApp(viewModel: RecipeViewModel = viewModel())
 
                 EditRecipeScreen(
                     editRecipeViewModel,
-                    { navController.navigateUp() }
+                    { navController.navigateUp() },
+                    { navController.navigateUp() },
+                    onRecipeDelete = {
+                        navController.navigate(BakersRecipesDestinations.Home.name)
+                    }
                 )
             }
-        }
 
-        if((backStackEntry?.destination?.displayName ?: "Home") != BakersRecipesDestinations.Home.name
-            && (navController.previousBackStackEntry != null))
-        {
-            IconButton(
-                onClick = { navController.navigateUp() },
-                modifier = Modifier
-                    .padding(4.dp)
-                    .background(Color.Black.copy(alpha = 0.3f), CircleShape)
+            composable(
+                BakersRecipesDestinations.New.name
             ) {
-                Icon(
-                    imageVector = Icons.Default.ArrowBack,
-                    tint = Color.White, // TODO: Hardcoded color?
-                    contentDescription = "back button"
+                val editRecipeViewModel: EditRecipeViewModel = hiltViewModel()
+
+                EditRecipeScreen(
+                    editRecipeViewModel,
+                    { navController.navigateUp() },
+                    { navController.navigateUp() },
+                    onRecipeDelete = {
+                        navController.navigate(BakersRecipesDestinations.Home.name)
+                    } // TODO: avoid repeated code
                 )
             }
         }

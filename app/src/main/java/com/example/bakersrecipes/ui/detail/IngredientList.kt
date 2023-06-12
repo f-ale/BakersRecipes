@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Card
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -24,42 +23,37 @@ fun IngredientListPreview()
 @Composable
 fun IngredientList(ingredients: List<Pair<String, Float>>, showWeight: Boolean)
 {
-    Card(modifier = Modifier
-        .fillMaxWidth()
-        .padding(horizontal = 16.dp))
-    {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Text(
-                "Ingredients",
-                style = Typography.titleMedium
-            )
+    Column(
+        modifier = Modifier.padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Text(
+            "Ingredients",
+            style = Typography.titleMedium
+        )
 
-            if(ingredients.isNotEmpty()) {
-                LazyColumn {
-                    items(ingredients) {
-                            ingredient: Pair<String,Float> ->
-                        RecipeIngredient(
-                            name = ingredient.first,
-                            number = if(showWeight) {ingredient.second} else {
-                              ingredient.second * 100
-                            },
-                            modifier = Modifier.padding(horizontal = 16.dp),
-                            showWeight = showWeight
-                        )
-                    }
+        if(ingredients.isNotEmpty()) {
+            LazyColumn {
+                items(ingredients) {
+                        ingredient: Pair<String,Float> ->
+                    RecipeIngredient(
+                        name = ingredient.first,
+                        number = if(showWeight) {ingredient.second} else {
+                          ingredient.second * 100
+                        },
+                        modifier = Modifier.padding(horizontal = 16.dp),
+                        showWeight = showWeight
+                    )
                 }
-            } else {
-                Text(
-                    "None yet",
-                    modifier = Modifier
-                        .fillMaxWidth(),
-                    textAlign = TextAlign.Center,
-                    style = Typography.bodyMedium
-                )
             }
+        } else {
+            Text(
+                "None yet",
+                modifier = Modifier
+                    .fillMaxWidth(),
+                textAlign = TextAlign.Center,
+                style = Typography.bodyMedium
+            )
         }
     }
 }

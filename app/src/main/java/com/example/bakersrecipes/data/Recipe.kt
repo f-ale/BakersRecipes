@@ -28,6 +28,8 @@ interface RecipeDao {
     suspend fun insertRecipes(vararg recipes: Recipe)
     @Delete
     suspend fun delete(recipe: Recipe)
+    @Query("SELECT id FROM recipes WHERE name = :name ORDER BY id DESC LIMIT 1")
+    fun getRecipeIdByName(name: String): Int
     @Query("SELECT * FROM recipes")
     fun getAllRecipes(): Flow<List<Recipe>>
     @Transaction
@@ -35,5 +37,5 @@ interface RecipeDao {
     fun getAllRecipesWithIngredients():List<RecipeWithIngredients>
     @Transaction
     @Query("SELECT * FROM recipes WHERE id = :recipeId LIMIT 1")
-    fun getRecipeWithIngredientsById(recipeId: Int): Flow<RecipeWithIngredients>
+    fun getRecipeWithIngredientsById(recipeId: Int): Flow<RecipeWithIngredients?>
 }

@@ -12,7 +12,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import java.lang.NumberFormatException
 import javax.inject.Inject
 
 @HiltViewModel
@@ -29,14 +28,18 @@ class DetailViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             getRecipeWithIngredientsById(recipeId).collect {
-                recipe -> _recipeDetailState.value = RecipeDetailState(
-                    recipe = recipe.recipe,
-                    ingredientDisplayList = recipe.ingredients.map {
-                        ingredient -> Pair(ingredient.name, ingredient.percent)
-                    }.sortedByDescending { it.second }
-                )
-                // We want ingredients to be sorted by highest percentage
-                ingredients = recipe.ingredients.sortedByDescending { it.percent }
+                recipe ->
+                if(recipe != null)
+                {
+                    _recipeDetailState.value = RecipeDetailState(
+                        recipe = recipe.recipe,
+                        ingredientDisplayList = recipe.ingredients.map {
+                                ingredient -> Pair(ingredient.name, ingredient.percent)
+                        }.sortedByDescending { it.second }
+                    )
+                    // We want ingredients to be sorted by highest percentage
+                    ingredients = recipe.ingredients.sortedByDescending { it.percent }
+                }
             }
         }
     }
@@ -76,6 +79,6 @@ class DetailViewModel @Inject constructor(
         )
     }
 
-    private fun getRecipeWithIngredientsById(recipeId: Int): Flow<RecipeWithIngredients> =
+    private fun getRecipeWithIngredientsById(recipeId: Int): Flow<RecipeWithIngredients?> =
         db.recipeDao().getRecipeWithIngredientsById(recipeId)
 }

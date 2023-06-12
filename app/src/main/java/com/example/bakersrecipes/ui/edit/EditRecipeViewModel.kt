@@ -1,6 +1,5 @@
 package com.example.bakersrecipes.ui.edit
 
-import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -29,73 +28,91 @@ class EditRecipeViewModel @Inject constructor(
     val editRecipeState: StateFlow<EditRecipeState> = _editRecipeState.asStateFlow()
 
     init {
-        if (recipeId == null) {
-            // TODO: New recipe
-        } else {
+        if (recipeId != null) {
             viewModelScope.launch {
                 getRecipeWithIngredientsById(recipeId).collect { it ->
-                    recipe = it
-                    _editRecipeState.value =
-                        EditRecipeState(
-                            title = it.recipe.name,
-                            description = it.recipe.name,
-                            ingredients = ingredientsToIngredientField(it.ingredients)
-                                .sortedByDescending { it.percent }
-                        )
+                    if(it != null) {
+                        recipe = it
+                        _editRecipeState.value =
+                            EditRecipeState(
+                                title = it.recipe.name,
+                                description = it.recipe.name,
+                                ingredients = ingredientsToIngredientField(it.ingredients)
+                                    .sortedByDescending { it.percent }
+                            )
+                    }
                 }
             }
-
-            // TODO: Edit recipe
         }
     }
 
+    fun deleteRecipe()
+    {
+        viewModelScope.launch {
+            recipe?.recipe?.let {
+                db.recipeDao().delete(it)
+            }
+        }
+    }
     fun saveChanges(): Boolean
     {
-        val validForm = editRecipeState.value.ingredients.all {
-            it.percent != null && it.name != null
-        }
+        val validForm =
+            editRecipeState.value.title.isNullOrEmpty().not() &&
+            editRecipeState.value.description.isNullOrEmpty().not() &&
+            editRecipeState.value.ingredients.all {
+                it.percent.isNullOrEmpty().not() && it.name.isNullOrEmpty().not()
+            }
 
         if(validForm) {
             viewModelScope.launch {
                 db.withTransaction {
-                    val recipeId: Int? = recipe?.recipe?.id
+                    var recipeId: Int? = recipe?.recipe?.id
+                    val recipeName = editRecipeState.value.title ?: "Untitled"
 
                     val newRecipe =
                         Recipe(
                             recipeId,
-                            editRecipeState.value.title ?: "Untitled"
+                            recipeName
                         )
 
                     db.recipeDao().insertOrUpdate(newRecipe)
+                    // TODO: Replace Room's upsert with custom method that returns new object id
 
-                    val ingredientDao = db.ingredientDao()
-                    val ingredientsToRemove = editRecipeState.value
-                        .removedIngredients.map{ it.ingredientId ?: -1 }
-
-                    ingredientDao.deleteIngredientsById(*ingredientsToRemove.toIntArray())
-
-                    val ingredientsToUpdate = editRecipeState.value.ingredients.map {
-                            field ->
-                        Ingredient(
-                            id = field.ingredientId,
-                            recipeId = recipeId ?: 1, // TODO: No, get the new id from query
-                            name = field.name ?: "Untitled",
-                            percent = field.percent ?: 0f,
-                        )
+                    if(recipeId == null)
+                    {
+                        recipeId = db.recipeDao().getRecipeIdByName(recipeName)
+                        // TODO: this will be useless when we replace room upsert with something better
                     }
 
-                    Log.d("BAKERSW", ingredientsToUpdate.joinToString(","))
+                    if(editRecipeState.value.ingredients.isNotEmpty())
+                    {
+                        val ingredientDao = db.ingredientDao()
+                        val ingredientsToRemove = editRecipeState.value
+                            .removedIngredients.map{ it.ingredientId ?: -1 }
 
-                    // TODO: Check if ingredients are ok
+                        ingredientDao.deleteIngredientsById(*ingredientsToRemove.toIntArray())
 
-                    ingredientDao.insertOrUpdateIngredients(*ingredientsToUpdate.toTypedArray())
+                        val maxPercent = editRecipeState.value.ingredients
+                            .maxOf{ it.percent?.toFloat() ?: 0f }
+
+                        val ingredientsToUpdate = editRecipeState.value.ingredients.map {
+                                field ->
+                            Ingredient(
+                                id = field.ingredientId,
+                                recipeId = recipeId,
+                                name = field.name ?: "Untitled",
+                                percent = field.percent?.toFloatOrNull()?.div(maxPercent) ?: 0f,
+                            )
+                        }
+
+                        ingredientDao.insertOrUpdateIngredients(*ingredientsToUpdate.toTypedArray())
+                    }
                 }
             }
         }
 
         // TODO: Save recipe description
 
-        // TODO: Handle new recipe
         return validForm
     }
 
@@ -109,13 +126,28 @@ class EditRecipeViewModel @Inject constructor(
 
     fun updateIngredient(index: Int, new:EditRecipeIngredientField)
     {
-        val mutableIngredientList = _editRecipeState.value.ingredients.toMutableList()
+        if(isStringAValidFloatOrEmptyOrNull(new.percent))
+        {
+            val mutableIngredientList = _editRecipeState.value.ingredients.toMutableList()
 
-        mutableIngredientList[index] = new
+            mutableIngredientList[index] = new
 
-        _editRecipeState.value = _editRecipeState.value.copy(
-            ingredients = mutableIngredientList.toList()
-        )
+            _editRecipeState.value = _editRecipeState.value.copy(
+                ingredients = mutableIngredientList.toList()
+            )
+        }
+    }
+    private fun isStringAValidFloatOrEmptyOrNull(number: String?): Boolean
+    {
+        if(number == null || number == "")
+            return true
+
+        return try {
+            number.toFloat().toString()
+            true
+        } catch (e: NumberFormatException) {
+            false
+        }
     }
 
     fun updateName(newName:String)
@@ -148,12 +180,12 @@ class EditRecipeViewModel @Inject constructor(
             ingredient ->
             EditRecipeIngredientField(
                 name = ingredient.name,
-                percent = ingredient.percent,
+                percent = ingredient.percent.times(100).toString(),
                 ingredientId = ingredient.id,
             )
         }
     }
 
-    private fun getRecipeWithIngredientsById(recipeId: Int): Flow<RecipeWithIngredients> =
+    private fun getRecipeWithIngredientsById(recipeId: Int): Flow<RecipeWithIngredients?> =
         db.recipeDao().getRecipeWithIngredientsById(recipeId)
 }

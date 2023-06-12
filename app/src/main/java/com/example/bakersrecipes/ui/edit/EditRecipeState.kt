@@ -10,5 +10,5 @@ data class EditRecipeState (
 data class EditRecipeIngredientField(
     val ingredientId:Int? = null,
     val name:String? = null,
-    val percent:Float? = null,
+    val percent:String? = null,
 )
