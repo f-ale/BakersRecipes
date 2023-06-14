@@ -1,3 +1,15 @@
 <resources>
     <string name="app_name">BakersRecipes</string>
+    <string name="make_recipe">Make recipe</string>
+    <string name="back">Back</string>
+    <string name="ingredients">Ingredients</string>
+    <string name="none_yet">You haven\'t added any ingredients yet</string>
+    <string name="total_recipe_weight">Total recipe weight</string>
+    <string name="gram_unit">g</string>
+    <string name="percent_unit">%</string>
+    <string name="edit_recipe">Edit recipe</string>
+    <string name="more">More</string>
+    <string name="delete">Delete</string>
+    <string name="new_ingredient">New ingredient</string>
+    <string name="add_recipe">Add recipe</string>
 </resources>

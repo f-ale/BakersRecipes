@@ -1,5 +1,10 @@
 package com.example.bakersrecipes.ui.edit
 
+import android.content.Intent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -11,6 +16,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyItemScope
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -38,11 +44,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
+import com.example.bakersrecipes.R
 import com.example.bakersrecipes.ui.common.BackButton
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -57,11 +69,23 @@ fun EditRecipeScreen( // TODO: Make scrollable
     val editRecipeState: EditRecipeState by viewModel.editRecipeState.collectAsState()
     var overflowMenuExpanded by remember { mutableStateOf(false) }
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
+
+    val context = LocalContext.current
+
+    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        viewModel.updateImage(uri)
+        val flag = Intent.FLAG_GRANT_READ_URI_PERMISSION
+        if (uri != null) {
+            context.contentResolver.takePersistableUriPermission(uri, flag)
+        }
+
+    }
+
     //TODO: Handle scaffold state
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
-            TopAppBar({ Text("Edit Recipe") },
+            TopAppBar({ Text(stringResource(id = R.string.edit_recipe)) },
                 actions = {
                     Button(onClick = {
                         val valid = viewModel.saveChanges()
@@ -74,13 +98,13 @@ fun EditRecipeScreen( // TODO: Make scrollable
                     IconButton(onClick = {
                         overflowMenuExpanded = !overflowMenuExpanded
                     }) {
-                        Icon(Icons.Filled.MoreVert, "More")
+                        Icon(Icons.Filled.MoreVert, stringResource(id = R.string.more))
                         DropdownMenu(
                             expanded = overflowMenuExpanded,
                             onDismissRequest = { overflowMenuExpanded = false }
                         ) {
                             DropdownMenuItem(
-                                text = { Text("Delete") },
+                                text = { Text(stringResource(id = R.string.delete)) },
                                 onClick = {
                                     // TODO: Move to trash instead of permanent delete
                                     viewModel.deleteRecipe()
@@ -92,11 +116,13 @@ fun EditRecipeScreen( // TODO: Make scrollable
                 },
                 navigationIcon = {
                     BackButton(onClick = onNavigateUp)
-                })
+                },
+                scrollBehavior = scrollBehavior,
+            )
         },
         floatingActionButton = {
             FloatingActionButton(onClick = { viewModel.newIngredient() }) {
-                Icon(Icons.Filled.Add, "New Ingredient")
+                Icon(Icons.Filled.Add, stringResource(id = R.string.new_ingredient))
             }
         }
     ) { paddingValues ->
@@ -107,6 +133,24 @@ fun EditRecipeScreen( // TODO: Make scrollable
         ) {
                 EditableIngredientList(
                     header = {
+                        AsyncImage(
+                            model = editRecipeState.image ?: R.drawable.ic_launcher_background,
+                            "test",
+                            Modifier
+                                .height(128.dp)
+                                .fillMaxWidth()
+                                .padding(horizontal = 12.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .clickable {
+                                    launcher.launch(
+                                        PickVisualMediaRequest(
+                                            ActivityResultContracts.PickVisualMedia.ImageOnly
+                                        )
+                                    )
+                                },
+                            contentScale = ContentScale.FillWidth,
+                        )
+                        Spacer(Modifier.height(8.dp))
                         TextEditField(
                             editRecipeState.title ?: "",
                             "Title",
@@ -213,6 +257,8 @@ fun IngredientEditField(
             onValueChange = { onValueChange(Pair(it, null)) },
             label = { Text("Ingredient") },
             modifier = Modifier.weight(1f),
+            keyboardOptions = KeyboardOptions.Default
+                .copy(imeAction = ImeAction.Done),
             isError = name == ""
         )
         Spacer(modifier = Modifier.width(8.dp))
@@ -230,12 +276,13 @@ fun IngredientEditField(
             Icon(
                 Icons.Outlined.Delete,
                 "Delete",
-                Modifier.size(64.dp).padding(8.dp)
+                Modifier
+                    .size(64.dp)
+                    .padding(8.dp)
             )
         }
     }
 }
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TextEditField(
@@ -248,9 +295,13 @@ fun TextEditField(
             name,
             onValueChange = onValueChange,
             label = { Text(label) },
-            modifier = modifier.fillMaxWidth().padding(
-                vertical = 4.dp,
-                horizontal = 12.dp
-            )
+            keyboardOptions = KeyboardOptions.Default
+                .copy(imeAction = ImeAction.Done),
+            modifier = modifier
+                .fillMaxWidth()
+                .padding(
+                    vertical = 4.dp,
+                    horizontal = 12.dp
+                )
         )
 }

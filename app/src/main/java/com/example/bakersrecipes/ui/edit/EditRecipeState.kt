@@ -1,8 +1,11 @@
 package com.example.bakersrecipes.ui.edit
 
+import android.net.Uri
+
 data class EditRecipeState (
     val title:String? = null,
     val description:String? = null,
+    val image:Uri? = null,
     val ingredients:List<EditRecipeIngredientField> = listOf(),
     val removedIngredients: List<EditRecipeIngredientField> = listOf()
 )

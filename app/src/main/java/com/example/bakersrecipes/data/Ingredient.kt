@@ -36,25 +36,18 @@ data class Ingredient(
 interface IngredientDao {
     @Insert
     fun insert(ingredient: Ingredient)
-
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertIngredients(vararg ingredients: Ingredient)
-
     @Upsert
     suspend fun insertOrUpdateIngredients(vararg ingredients: Ingredient)
-
     @Delete
     suspend fun delete(ingredient: Ingredient)
-
     @Delete
     suspend fun deleteIngredients(vararg ingredients: Ingredient)
-
     @Query("DELETE FROM ingredients WHERE id IN (:ingredientId)")
     suspend fun deleteIngredientsById(vararg ingredientId:Int)
-
     @Query("SELECT * FROM ingredients")
     fun getAllIngredients(): List<Ingredient>
-
     @Query("SELECT * FROM ingredients WHERE recipeId = :recipeId ORDER BY percent DESC")
     fun getIngredientsForRecipe(recipeId: Int): Flow<List<Ingredient>>
 }

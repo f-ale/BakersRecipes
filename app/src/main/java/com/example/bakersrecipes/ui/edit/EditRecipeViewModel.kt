@@ -1,5 +1,6 @@
 package com.example.bakersrecipes.ui.edit
 
+import android.net.Uri
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -36,7 +37,8 @@ class EditRecipeViewModel @Inject constructor(
                         _editRecipeState.value =
                             EditRecipeState(
                                 title = it.recipe.name,
-                                description = it.recipe.name,
+                                description = it.recipe.description,
+                                image = it.recipe.image,
                                 ingredients = ingredientsToIngredientField(it.ingredients)
                                     .sortedByDescending { it.percent }
                             )
@@ -68,11 +70,15 @@ class EditRecipeViewModel @Inject constructor(
                 db.withTransaction {
                     var recipeId: Int? = recipe?.recipe?.id
                     val recipeName = editRecipeState.value.title ?: "Untitled"
+                    val recipeImage = editRecipeState.value.image
+                    val recipeDescription = editRecipeState.value.description
 
                     val newRecipe =
                         Recipe(
-                            recipeId,
-                            recipeName
+                            id = recipeId,
+                            name = recipeName,
+                            image = recipeImage,
+                            description = recipeDescription
                         )
 
                     db.recipeDao().insertOrUpdate(newRecipe)
@@ -122,6 +128,13 @@ class EditRecipeViewModel @Inject constructor(
             ingredients = (_editRecipeState.value.ingredients.toMutableList() +
                 EditRecipeIngredientField()).toList()
         )
+    }
+    fun updateImage(uri: Uri?)
+    {
+        if(uri != null)
+        {
+            _editRecipeState.value = _editRecipeState.value.copy(image = uri)
+        }
     }
 
     fun updateIngredient(index: Int, new:EditRecipeIngredientField)

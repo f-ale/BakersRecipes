@@ -6,6 +6,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import com.example.bakersrecipes.R
 
 @Composable
 fun BackButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
@@ -15,7 +17,7 @@ fun BackButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
     ) {
         Icon(
             imageVector = Icons.Default.ArrowBack,
-            contentDescription = "Back"
+            contentDescription = stringResource(id = R.string.back)
         )
     }
 }

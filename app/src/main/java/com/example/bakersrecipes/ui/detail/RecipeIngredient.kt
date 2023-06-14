@@ -6,17 +6,20 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
+import com.example.bakersrecipes.R
 import kotlin.math.roundToInt
 
 @Composable
 fun RecipeIngredient(name:String, number:Float, showWeight:Boolean, modifier: Modifier = Modifier)
 {
     var numberString = number.roundToInt().toString()
-    if(showWeight)
-        numberString += "g"
+
+    numberString += if(showWeight)
+        stringResource(id = R.string.gram_unit)
     else
-        numberString += "%"
+        stringResource(id = R.string.percent_unit)
 
     Box(modifier = modifier.fillMaxWidth()) {
         Text(

@@ -1,6 +1,5 @@
 package com.example.bakersrecipes.ui.home
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -13,9 +12,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
 import com.example.bakersrecipes.R
 import com.example.bakersrecipes.data.Recipe
 import com.example.bakersrecipes.ui.theme.BakersRecipesTheme
@@ -41,9 +40,9 @@ fun RecipeItem(recipe: Recipe, onRecipeClicked: (recipeId: Int?) -> Unit, modifi
     ) {
         Column(
         ) {
-            Image(
-                painterResource(id = R.drawable.ic_launcher_background),
-                recipe.name,
+            AsyncImage(
+                model = recipe.image ?: R.drawable.ic_launcher_background,
+                contentDescription = recipe.name,
                 Modifier
                     .height(128.dp)
                     .fillMaxWidth(),
@@ -56,10 +55,12 @@ fun RecipeItem(recipe: Recipe, onRecipeClicked: (recipeId: Int?) -> Unit, modifi
                     recipe.name,
                     style = Typography.titleMedium
                 )
-                Text(
-                    "by testuser", // TODO: Change
-                    style = Typography.labelSmall
-                )
+                recipe.description?.let {
+                    Text(
+                        it, // TODO: Change
+                        style = Typography.labelSmall
+                    )
+                }
             }
 
         }

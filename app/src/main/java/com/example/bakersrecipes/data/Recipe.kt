@@ -1,5 +1,6 @@
 package com.example.bakersrecipes.data
 
+import android.net.Uri
 import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Entity
@@ -16,6 +17,8 @@ import kotlinx.coroutines.flow.Flow
 data class Recipe(
     @PrimaryKey(autoGenerate = true)
     val id:Int? = null,
+    val image: Uri? = null,
+    val description: String? = null,
     val name:String,
 )
 @Dao
