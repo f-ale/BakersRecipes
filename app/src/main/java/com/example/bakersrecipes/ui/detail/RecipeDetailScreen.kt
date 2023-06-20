@@ -57,6 +57,7 @@ fun RecipeDetailScreen( // TODO: Make scrollable
     onEditRecipe: (Int) -> Unit
 ) {
     val recipeDetailState by viewModel.recipeDetailState.collectAsState()
+    val weightUnit by viewModel.getWeightUnit().collectAsState(initial = "g")
 
     // TODO: Delete recipe
 
@@ -88,7 +89,7 @@ fun RecipeDetailScreen( // TODO: Make scrollable
                     Modifier
                         .height(248.dp)
                         .fillMaxWidth()
-                        .padding(horizontal = 12.dp)
+                        .padding(horizontal = 16.dp)
                         .clip(RoundedCornerShape(16.dp)),
                     contentScale = ContentScale.FillWidth
                 )
@@ -102,16 +103,19 @@ fun RecipeDetailScreen( // TODO: Make scrollable
                             style = MaterialTheme.typography.bodyMedium
                         )
                     }
-                    IngredientList(ingredients = recipeDetailState.ingredientDisplayList,
-                        recipeDetailState.totalRecipeWeight != null)
-
+                    IngredientList(
+                        ingredients = recipeDetailState.ingredientDisplayList,
+                        showWeight = recipeDetailState.totalRecipeWeight != null,
+                        weightUnit = weightUnit
+                    )
                     if(recipeDetailState.ingredientDisplayList.isNotEmpty())
                     {
                         Divider()
                         MakeRecipeForm(
                             recipeDetailState.totalRecipeWeight?.toString() ?: "",
                             onUpdateTotalRecipeWeight =
-                            { viewModel.updateMakeRecipeWeightFromString(it) }
+                            { viewModel.updateMakeRecipeWeightFromString(it) },
+                            weightUnit = weightUnit
                         )
                     }
                 }
@@ -124,7 +128,8 @@ fun RecipeDetailScreen( // TODO: Make scrollable
 @Composable
 fun MakeRecipeForm(
     totalRecipeWeight: String,
-    onUpdateTotalRecipeWeight: (String) -> Unit
+    onUpdateTotalRecipeWeight: (String) -> Unit,
+    weightUnit: String
 ) {
     Column {
         Text(
@@ -135,7 +140,6 @@ fun MakeRecipeForm(
         Row(
             verticalAlignment = Alignment.CenterVertically
         ) {
-
             val focusManager = LocalFocusManager.current
             OutlinedTextField(
                 totalRecipeWeight,
@@ -144,7 +148,7 @@ fun MakeRecipeForm(
                     .fillMaxWidth()
                     .padding(8.dp),
                 label = { Text(stringResource(id = R.string.total_recipe_weight)) },
-                trailingIcon = { Text("g") },
+                trailingIcon = { Text(weightUnit) },
                 keyboardOptions = KeyboardOptions
                     .Default.copy(
                         keyboardType = KeyboardType.Number,

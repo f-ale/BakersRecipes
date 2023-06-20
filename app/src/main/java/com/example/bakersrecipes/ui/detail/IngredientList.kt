@@ -20,10 +20,10 @@ import com.example.bakersrecipes.ui.theme.Typography
 @Composable
 fun IngredientListPreview()
 {
-    IngredientList(listOf(Pair("",1f)), false)
+    IngredientList(listOf(Pair("",1f)), false, "g")
 }
 @Composable
-fun IngredientList(ingredients: List<Pair<String, Float>>, showWeight: Boolean)
+fun IngredientList(ingredients: List<Pair<String, Float>>, showWeight: Boolean, weightUnit: String)
 {
     Column(
         verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -43,7 +43,8 @@ fun IngredientList(ingredients: List<Pair<String, Float>>, showWeight: Boolean)
                           ingredient.second * 100
                         },
                         modifier = Modifier.padding(horizontal = 16.dp),
-                        showWeight = showWeight
+                        showWeight = showWeight,
+                        weightUnit = weightUnit
                     )
                 }
             }

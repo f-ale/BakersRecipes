@@ -8,10 +8,12 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -31,7 +33,12 @@ import com.example.bakersrecipes.ui.theme.BakersRecipesTheme
 fun BakersRecipeHomePreview()
 {
     BakersRecipesTheme {
-        BakersRecipeHome(listOf(Recipe(name = "test")),{},{})
+        BakersRecipeHome(
+            listOf(Recipe(name = "test")),
+            {},
+            {},
+            {}
+        )
     }
 }
 
@@ -41,17 +48,26 @@ fun BakersRecipeHome(
     recipes: List<Recipe>,
     onAddRecipe: () -> Unit,
     onRecipeClicked: (recipeId: Int?) -> Unit,
+    onSettingsButtonPressed: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
-            CenterAlignedTopAppBar(title = {
-                Text(
-                    "\uD83D\uDC68\u200D\uD83C\uDF73"
-                )
-            }, scrollBehavior = scrollBehavior)
+            CenterAlignedTopAppBar(
+                title = {
+                    Text(
+                        "\uD83D\uDC68\u200D\uD83C\uDF73"
+                    )
+                },
+                scrollBehavior = scrollBehavior,
+                actions = {
+                    IconButton(onSettingsButtonPressed) {
+                        Icon(Icons.Default.Settings, "Settings")
+                    }
+                }
+            )
         },
         content = {
         Surface(

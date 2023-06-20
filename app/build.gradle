@@ -63,6 +63,7 @@ dependencies {
     implementation 'androidx.compose.ui:ui-graphics'
     implementation 'androidx.compose.ui:ui-tooling-preview'
     implementation 'androidx.compose.material3:material3'
+    implementation 'androidx.compose.animation:animation'
 
     // Navigation
     implementation "androidx.navigation:navigation-compose:2.6.0"
@@ -72,6 +73,9 @@ dependencies {
     // Coil
     implementation "io.coil-kt:coil:2.4.0"
     implementation "io.coil-kt:coil-compose:2.4.0"
+
+    // Accompanist
+    implementation "com.google.accompanist:accompanist-navigation-animation:0.31.3-beta"
 
     // Activity
     implementation "androidx.activity:activity-ktx:1.7.2"
@@ -84,6 +88,11 @@ dependencies {
     // Hilt testing dependencies
     androidTestImplementation "com.google.dagger:hilt-android-testing:2.44"
     kaptAndroidTest "com.google.dagger:hilt-compiler:2.44"
+
+    // Settings Compose
+    implementation 'com.github.alorma:compose-settings-ui-m3:0.27.0'
+    implementation 'com.github.alorma:compose-settings-storage-datastore:0.27.0'
+    implementation "androidx.datastore:datastore-preferences:1.0.0"
 
     // Room
     def room_version = "2.5.1"

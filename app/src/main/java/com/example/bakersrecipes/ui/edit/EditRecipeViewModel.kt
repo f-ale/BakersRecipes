@@ -1,6 +1,9 @@
 package com.example.bakersrecipes.ui.edit
 
 import android.net.Uri
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -14,12 +17,14 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class EditRecipeViewModel @Inject constructor(
     private val db:RecipeDatabase,
+    dataStore: DataStore<Preferences>,
     savedStateHandle: SavedStateHandle
 ): ViewModel() {
     private val recipeId: Int? = savedStateHandle.get<Int>("recipeId")
@@ -27,6 +32,17 @@ class EditRecipeViewModel @Inject constructor(
     private var recipe: RecipeWithIngredients? = null
 
     val editRecipeState: StateFlow<EditRecipeState> = _editRecipeState.asStateFlow()
+
+    val weightUnit = dataStore.data.map { it ->
+        if(it[booleanPreferencesKey("weight_unit")] == false)
+            "g"
+        else
+            "oz"
+    }
+
+    val showWeight = dataStore.data.map {
+        it[booleanPreferencesKey("show_weight")] ?: false
+    }
 
     init {
         if (recipeId != null) {

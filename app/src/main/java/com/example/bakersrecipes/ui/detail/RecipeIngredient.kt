@@ -12,12 +12,17 @@ import com.example.bakersrecipes.R
 import kotlin.math.roundToInt
 
 @Composable
-fun RecipeIngredient(name:String, number:Float, showWeight:Boolean, modifier: Modifier = Modifier)
+fun RecipeIngredient(
+    name:String,
+    number:Float,
+    showWeight:Boolean,
+    weightUnit:String,
+    modifier: Modifier = Modifier)
 {
     var numberString = number.roundToInt().toString()
 
     numberString += if(showWeight)
-        stringResource(id = R.string.gram_unit)
+        weightUnit
     else
         stringResource(id = R.string.percent_unit)
 
@@ -37,5 +42,5 @@ fun RecipeIngredient(name:String, number:Float, showWeight:Boolean, modifier: Mo
 @Composable
 fun RecipeIngredientPreview()
 {
-    RecipeIngredient("test", 1f, false)
+    RecipeIngredient("test", 1f, false, "g")
 }

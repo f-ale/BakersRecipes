@@ -69,6 +69,8 @@ fun EditRecipeScreen( // TODO: Make scrollable
     val editRecipeState: EditRecipeState by viewModel.editRecipeState.collectAsState()
     var overflowMenuExpanded by remember { mutableStateOf(false) }
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
+    val weightUnit by viewModel.weightUnit.collectAsState(initial = "g")
+    val showWeight by viewModel.showWeight.collectAsState(initial = false)
 
     val context = LocalContext.current
 
@@ -135,7 +137,7 @@ fun EditRecipeScreen( // TODO: Make scrollable
                     header = {
                         AsyncImage(
                             model = editRecipeState.image ?: R.drawable.ic_launcher_background,
-                            "test",
+                            editRecipeState.title,
                             Modifier
                                 .height(128.dp)
                                 .fillMaxWidth()
@@ -174,7 +176,10 @@ fun EditRecipeScreen( // TODO: Make scrollable
                     onEditFieldValueChange = { index, new ->
                         viewModel.updateIngredient(index, new)
                     },
-                    onDeleteIngredient = { viewModel.removeIngredient(it) }
+                    onDeleteIngredient = { viewModel.removeIngredient(it) },
+                    modifier = Modifier.padding(horizontal = 12.dp),
+                    weightUnit = weightUnit,
+                    showWeight = showWeight
                 )
         }
     }
@@ -187,7 +192,9 @@ fun EditableIngredientList(
     modifier: Modifier = Modifier,
     onEditFieldValueChange: (Int, EditRecipeIngredientField) -> Unit,
     onDeleteIngredient: (EditRecipeIngredientField) -> Unit,
-    header: @Composable LazyItemScope.() -> Unit
+    header: @Composable LazyItemScope.() -> Unit,
+    weightUnit: String,
+    showWeight: Boolean
 ) {
     LazyColumn(modifier = modifier)
     {
@@ -218,7 +225,10 @@ fun EditableIngredientList(
 
                     // TODO: Change how percent is handled... it should be a string
                 },
-                onDeleteIngredient = { onDeleteIngredient(ingredientField) }
+                onDeleteIngredient = { onDeleteIngredient(ingredientField) },
+                weightUnit = weightUnit,
+                showWeight = showWeight
+
             )
         }
         item {
@@ -236,7 +246,12 @@ fun IngredientEditField(
     onDeleteIngredient: () -> Unit,
     modifier: Modifier = Modifier,
     icon: ImageVector? = null,
+    showWeight: Boolean,
+    weightUnit: String
 ) {
+    val trailingIconString = if(showWeight) weightUnit else "%"
+    val inputLabel = if(showWeight) "Weight" else "Percent" // TODO: Extract strings
+
     // TODO: Warn if percentage = 0
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -265,8 +280,8 @@ fun IngredientEditField(
         OutlinedTextField(
             percent,
             onValueChange = { onValueChange(Pair(null, it)) },
-            label = { Text("Percentage") },
-            trailingIcon = { Text("%") },
+            label = { Text(inputLabel) },
+            trailingIcon = { Text(trailingIconString) },
             modifier = Modifier.weight(1f),
             keyboardOptions = KeyboardOptions.Default
                 .copy(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
