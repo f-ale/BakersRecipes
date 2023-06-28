@@ -5,6 +5,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -16,6 +17,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyItemScope
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -41,6 +44,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -52,25 +56,30 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import com.example.bakersrecipes.R
 import com.example.bakersrecipes.ui.common.BackButton
+import com.example.bakersrecipes.ui.theme.BakersRecipesTheme
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun EditRecipeScreen( // TODO: Make scrollable
+fun EditRecipeScreen(
     viewModel: EditRecipeViewModel,
     onSaveEdits: () -> Unit,
     onNavigateUp: () -> Unit,
     onRecipeDelete: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val coroutineScope = rememberCoroutineScope()
     val editRecipeState: EditRecipeState by viewModel.editRecipeState.collectAsState()
     var overflowMenuExpanded by remember { mutableStateOf(false) }
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
-    val weightUnit by viewModel.weightUnit.collectAsState(initial = "g")
-    val showWeight by viewModel.showWeight.collectAsState(initial = false)
+    val weightUnit by viewModel.weightUnit.collectAsStateWithLifecycle("g")
+    val showWeight by viewModel.showWeight.collectAsStateWithLifecycle(false)
 
     val context = LocalContext.current
 
@@ -80,8 +89,9 @@ fun EditRecipeScreen( // TODO: Make scrollable
         if (uri != null) {
             context.contentResolver.takePersistableUriPermission(uri, flag)
         }
-
     }
+
+    val listState = rememberLazyListState()
 
     //TODO: Handle scaffold state
     Scaffold(
@@ -123,8 +133,27 @@ fun EditRecipeScreen( // TODO: Make scrollable
             )
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = { viewModel.newIngredient() }) {
-                Icon(Icons.Filled.Add, stringResource(id = R.string.new_ingredient))
+            Row {
+                FloatingActionButton(onClick = {
+                    viewModel.newIngredient()
+                    coroutineScope.launch {
+                        listState.animateScrollToItem(
+                            editRecipeState.ingredients.lastIndex,
+                            1
+                        )
+                    }
+                }) {
+                    Icon(Icons.Filled.Add, stringResource(id = R.string.new_ingredient))
+                }
+
+                FloatingActionButton(onClick = {
+                    viewModel.newStep()
+                    coroutineScope.launch {
+                        // TODO: Scroll to bottom
+                    }
+                }) {
+                    Icon(Icons.Filled.Add, stringResource(id = R.string.new_ingredient))
+                }
             }
         }
     ) { paddingValues ->
@@ -134,6 +163,7 @@ fun EditRecipeScreen( // TODO: Make scrollable
                 .padding(paddingValues)
         ) {
                 EditableIngredientList(
+                    listState = listState,
                     header = {
                         AsyncImage(
                             model = editRecipeState.image ?: R.drawable.ic_launcher_background,
@@ -179,7 +209,12 @@ fun EditRecipeScreen( // TODO: Make scrollable
                     onDeleteIngredient = { viewModel.removeIngredient(it) },
                     modifier = Modifier.padding(horizontal = 12.dp),
                     weightUnit = weightUnit,
-                    showWeight = showWeight
+                    showWeight = showWeight,
+                    onDeleteStep = { viewModel.removeStep(it) },
+                    onStepFieldValueChange = { index, new -> viewModel.updateStep(index, new) },
+                    steps = editRecipeState.steps,
+                    onAddIngredient = { viewModel.newIngredient() },
+                    onAddStep = { viewModel.newStep() }
                 )
         }
     }
@@ -188,17 +223,26 @@ fun EditRecipeScreen( // TODO: Make scrollable
 
 @Composable
 fun EditableIngredientList(
+    listState: LazyListState,
     ingredients: List<EditRecipeIngredientField>,
+    steps: List<EditRecipeStepField>,
     modifier: Modifier = Modifier,
     onEditFieldValueChange: (Int, EditRecipeIngredientField) -> Unit,
+    onStepFieldValueChange: (Int, EditRecipeStepField) -> Unit,
     onDeleteIngredient: (EditRecipeIngredientField) -> Unit,
+    onAddIngredient: () -> Unit,
+    onDeleteStep: (EditRecipeStepField) -> Unit,
+    onAddStep: () -> Unit,
     header: @Composable LazyItemScope.() -> Unit,
     weightUnit: String,
     showWeight: Boolean
 ) {
-    LazyColumn(modifier = modifier)
-    {
+    LazyColumn(
+        state = listState,
+        modifier = modifier,
+    ) {
         item(content = header)
+
         items(ingredients.size) { index ->
             val ingredientField = ingredients[index]
             IngredientEditField(
@@ -213,7 +257,6 @@ fun EditableIngredientList(
                             )
                         )
                     }
-
                     it.second?.let {
                         onEditFieldValueChange(
                             index,
@@ -222,17 +265,67 @@ fun EditableIngredientList(
                             )
                         )
                     }
-
-                    // TODO: Change how percent is handled... it should be a string
                 },
                 onDeleteIngredient = { onDeleteIngredient(ingredientField) },
                 weightUnit = weightUnit,
                 showWeight = showWeight
-
             )
         }
         item {
-            Spacer(Modifier.height(64.dp))
+            Button(
+                onClick = onAddIngredient,
+                modifier = Modifier.fillMaxWidth().padding(16.dp)
+            ) {
+                Text("Add Ingredient")
+            }
+        }
+        item {
+            Text(
+                "Steps",
+                style = MaterialTheme.typography.bodyLarge,
+                modifier = Modifier.padding(
+                    horizontal = 18.dp,
+                    vertical = 8.dp,
+                )
+            )
+        }
+        items(steps.size) {
+                index ->
+            val stepField = steps[index]
+            StepEditField(
+                description = stepField.description ?: "",
+                duration = stepField.duration ?: "",
+                onValueChange = { it ->
+                    it.first?.let {
+                        onStepFieldValueChange(
+                            index,
+                            stepField.copy(
+                                description = it,
+                            )
+                        )
+                    }
+                    it.second?.let {
+                        onStepFieldValueChange(
+                            index,
+                            stepField.copy(
+                                duration = it,
+                            )
+                        )
+                    }
+                },
+                onDeleteStep = { onDeleteStep(stepField) })
+            Spacer(Modifier.height(8.dp))
+        }
+        item {
+            Button(
+                onClick = onAddStep,
+                modifier = Modifier.fillMaxWidth().padding(16.dp)
+            ) {
+                Text("Add Timed Step")
+            }
+        }
+        item {
+            Spacer(Modifier.height(78.dp))
         }
     }
 }
@@ -252,20 +345,19 @@ fun IngredientEditField(
     val trailingIconString = if(showWeight) weightUnit else "%"
     val inputLabel = if(showWeight) "Weight" else "Percent" // TODO: Extract strings
 
-    // TODO: Warn if percentage = 0
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
     ) {
         icon?.let {
             Icon(
-            icon,
-            name,
-            modifier = Modifier
-                .padding(horizontal = 12.dp)
-                .size(32.dp)
-                .offset(y = 3.dp)
-        ) }
+                icon,
+                name,
+                modifier = Modifier
+                    .padding(horizontal = 12.dp)
+                    .size(32.dp)
+                    .offset(y = 3.dp)
+            ) }
         Spacer(modifier = Modifier.width(16.dp))
         OutlinedTextField(
             name,
@@ -298,6 +390,81 @@ fun IngredientEditField(
         }
     }
 }
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun StepEditField(
+    description: String,
+    duration: String,
+    onValueChange: (Pair<String?, String?>) -> Unit,
+    onDeleteStep: () -> Unit,
+    modifier: Modifier = Modifier,
+    icon: ImageVector? = null,
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = modifier
+    ) {
+        icon?.let {
+            Icon(
+                icon,
+                description,
+                modifier = Modifier
+                    .padding(horizontal = 12.dp)
+                    .size(32.dp)
+                    .offset(y = 3.dp)
+            ) }
+        Spacer(modifier = Modifier.width(16.dp))
+        Column(modifier = Modifier.weight(4f)) {
+            OutlinedTextField(
+                description,
+                onValueChange = { onValueChange(Pair(it, null)) },
+                label = { Text("Step description") },
+                keyboardOptions = KeyboardOptions.Default
+                    .copy(imeAction = ImeAction.Done),
+                isError = description == "",
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            OutlinedTextField(
+                duration,
+                onValueChange = { onValueChange(Pair(null, it)) },
+                label = { Text("Duration") },
+                trailingIcon = { Text("min") },
+                keyboardOptions = KeyboardOptions.Default
+                    .copy(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
+                isError = duration == "",
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+        IconButton(
+            modifier = Modifier.weight(0.5f),
+            onClick = onDeleteStep
+        ) {
+            Icon(
+                Icons.Outlined.Delete,
+                "Delete",
+                Modifier
+                    .size(64.dp)
+                    .padding(8.dp)
+            )
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun PreviewStepEditField()
+{
+    BakersRecipesTheme() {
+        StepEditField(
+            description = "Bollire la pasta",
+            duration = "12",
+            onValueChange = {},
+            onDeleteStep = { /*TODO*/ }
+        )
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TextEditField(

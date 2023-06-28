@@ -1,12 +1,12 @@
 package com.example.bakersrecipes.ui.home
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -28,22 +28,22 @@ fun RecipeItemPreview() {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RecipeItem(recipe: Recipe, onRecipeClicked: (recipeId: Int?) -> Unit, modifier: Modifier = Modifier) {
     Card (
+        onClick = { onRecipeClicked(recipe.id) },
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.secondaryContainer
         ),
         modifier = modifier
             .fillMaxWidth()
-            .clickable { onRecipeClicked(recipe.id) }
     ) {
-        Column(
-        ) {
+        Column{
             AsyncImage(
                 model = recipe.image ?: R.drawable.ic_launcher_background,
                 contentDescription = recipe.name,
-                Modifier
+                modifier = Modifier
                     .height(128.dp)
                     .fillMaxWidth(),
                 contentScale = ContentScale.FillWidth
@@ -55,9 +55,10 @@ fun RecipeItem(recipe: Recipe, onRecipeClicked: (recipeId: Int?) -> Unit, modifi
                     recipe.name,
                     style = Typography.titleMedium
                 )
-                recipe.description?.let {
+
+                recipe.description?.let { description ->
                     Text(
-                        it, // TODO: Change
+                        description,
                         style = Typography.labelSmall
                     )
                 }

@@ -4,6 +4,7 @@ import androidx.room.Embedded
 import androidx.room.Relation
 import com.example.bakersrecipes.data.Ingredient
 import com.example.bakersrecipes.data.Recipe
+import com.example.bakersrecipes.data.Step
 
 data class RecipeWithIngredients(
     @Embedded val recipe: Recipe,
@@ -11,5 +12,10 @@ data class RecipeWithIngredients(
         parentColumn = "id",
         entityColumn = "recipeId"
     )
-    val ingredients: List<Ingredient>
+    val ingredients: List<Ingredient>,
+    @Relation(
+        parentColumn = "id",
+        entityColumn = "recipeId"
+    )
+    val steps: List<Step>
 )

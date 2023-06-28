@@ -19,12 +19,15 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.bakersrecipes.R
+import com.example.bakersrecipes.RecipeViewModel
 import com.example.bakersrecipes.data.Recipe
 import com.example.bakersrecipes.ui.theme.BakersRecipesTheme
 
@@ -33,24 +36,26 @@ import com.example.bakersrecipes.ui.theme.BakersRecipesTheme
 fun BakersRecipeHomePreview()
 {
     BakersRecipesTheme {
-        BakersRecipeHome(
+       /* BakersRecipeHome(
             listOf(Recipe(name = "test")),
             {},
             {},
             {}
-        )
+        )*/
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BakersRecipeHome(
-    recipes: List<Recipe>,
+    viewModel: RecipeViewModel,
     onAddRecipe: () -> Unit,
     onRecipeClicked: (recipeId: Int?) -> Unit,
     onSettingsButtonPressed: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val recipes by viewModel.getAllRecipes().collectAsStateWithLifecycle(emptyList()) // TODO: Move to bakersrecipehome
+
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),

@@ -11,6 +11,7 @@ import androidx.room.withTransaction
 import com.example.bakersrecipes.data.Ingredient
 import com.example.bakersrecipes.data.Recipe
 import com.example.bakersrecipes.data.RecipeDatabase
+import com.example.bakersrecipes.data.Step
 import com.example.bakersrecipes.data.relations.RecipeWithIngredients
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
@@ -43,7 +44,6 @@ class EditRecipeViewModel @Inject constructor(
     val showWeight = dataStore.data.map {
         it[booleanPreferencesKey("show_weight")] ?: false
     }
-
     init {
         if (recipeId != null) {
             viewModelScope.launch {
@@ -56,14 +56,13 @@ class EditRecipeViewModel @Inject constructor(
                                 description = it.recipe.description,
                                 image = it.recipe.image,
                                 ingredients = ingredientsToIngredientField(it.ingredients)
-                                    .sortedByDescending { it.percent }
-                            )
+                                    .sortedByDescending { it.percent },
+                                steps = stepsToStepField(it.steps)                            )
                     }
                 }
             }
         }
     }
-
     fun deleteRecipe()
     {
         viewModelScope.launch {
@@ -79,6 +78,8 @@ class EditRecipeViewModel @Inject constructor(
             editRecipeState.value.description.isNullOrEmpty().not() &&
             editRecipeState.value.ingredients.all {
                 it.percent.isNullOrEmpty().not() && it.name.isNullOrEmpty().not()
+            } && editRecipeState.value.steps.all {
+                it.description.isNullOrEmpty().not() && it.duration.isNullOrEmpty().not()
             }
 
         if(validForm) {
@@ -129,20 +130,44 @@ class EditRecipeViewModel @Inject constructor(
 
                         ingredientDao.insertOrUpdateIngredients(*ingredientsToUpdate.toTypedArray())
                     }
+
+                    if(editRecipeState.value.steps.isNotEmpty())
+                    {
+                        val stepDao = db.stepDao()
+                        val stepsToRemove = editRecipeState.value
+                            .removedSteps.map{ it.stepId ?: -1 }
+
+                        stepDao.deleteStepsById(*stepsToRemove.toIntArray())
+
+                        val stepsToUpdate = editRecipeState.value.steps.map {
+                                field ->
+                            Step(
+                                id = field.stepId,
+                                recipeId = recipeId,
+                                description = field.description ?: "Untitled",
+                                duration = field.duration?.toFloatOrNull() ?: 0f,
+                            )
+                        }
+
+                       stepDao.insertOrUpdateSteps(*stepsToUpdate.toTypedArray())
+                    }
                 }
             }
         }
-
-        // TODO: Save recipe description
-
         return validForm
     }
-
     fun newIngredient()
     {
         _editRecipeState.value = _editRecipeState.value.copy(
             ingredients = (_editRecipeState.value.ingredients.toMutableList() +
                 EditRecipeIngredientField()).toList()
+        )
+    }
+    fun newStep()
+    {
+        _editRecipeState.value = _editRecipeState.value.copy(
+            steps = (_editRecipeState.value.steps.toMutableList() +
+                    EditRecipeStepField()).toList()
         )
     }
     fun updateImage(uri: Uri?)
@@ -152,7 +177,6 @@ class EditRecipeViewModel @Inject constructor(
             _editRecipeState.value = _editRecipeState.value.copy(image = uri)
         }
     }
-
     fun updateIngredient(index: Int, new:EditRecipeIngredientField)
     {
         if(isStringAValidFloatOrEmptyOrNull(new.percent))
@@ -163,6 +187,19 @@ class EditRecipeViewModel @Inject constructor(
 
             _editRecipeState.value = _editRecipeState.value.copy(
                 ingredients = mutableIngredientList.toList()
+            )
+        }
+    }
+    fun updateStep(index: Int, new:EditRecipeStepField)
+    {
+        if(isStringAValidFloatOrEmptyOrNull(new.duration))
+        {
+            val mutableStepList = _editRecipeState.value.steps.toMutableList()
+
+            mutableStepList[index] = new
+
+            _editRecipeState.value = _editRecipeState.value.copy(
+                steps = mutableStepList.toList()
             )
         }
     }
@@ -178,17 +215,14 @@ class EditRecipeViewModel @Inject constructor(
             false
         }
     }
-
     fun updateName(newName:String)
     {
         _editRecipeState.value = _editRecipeState.value.copy(title = newName)
     }
-
     fun updateDescription(newDescription:String)
     {
         _editRecipeState.value = _editRecipeState.value.copy(description = newDescription)
     }
-
     fun removeIngredient(ingredient:EditRecipeIngredientField)
     {
         val mutableIngredientList = _editRecipeState.value.ingredients.toMutableList()
@@ -202,7 +236,19 @@ class EditRecipeViewModel @Inject constructor(
             removedIngredients = mutableRemovedIngredientList
         )
     }
+    fun removeStep(step:EditRecipeStepField)
+    {
+        val mutableStepList = _editRecipeState.value.steps.toMutableList()
+        mutableStepList.remove(step)
 
+        val mutableRemovedStepList = _editRecipeState.value.removedSteps.toMutableList()
+        mutableRemovedStepList.add(step)
+
+        _editRecipeState.value = _editRecipeState.value.copy(
+            steps = mutableStepList,
+            removedSteps = mutableRemovedStepList // TODO: Use a single list for both, with a "deleted" flag on the data, and then filter the data according to its use?
+        )
+    }
     private fun ingredientsToIngredientField(ingredients: List<Ingredient>): List<EditRecipeIngredientField>
     {
         return ingredients.sortedBy{it.id}.map {
@@ -214,7 +260,17 @@ class EditRecipeViewModel @Inject constructor(
             )
         }
     }
-
+    private fun stepsToStepField(steps: List<Step>): List<EditRecipeStepField>
+    {
+        return steps.sortedBy{it.id}.map {
+                step ->
+            EditRecipeStepField(
+                description = step.description,
+                duration = step.duration.toString(),
+                stepId = step.id,
+            )
+        }
+    }
     private fun getRecipeWithIngredientsById(recipeId: Int): Flow<RecipeWithIngredients?> =
         db.recipeDao().getRecipeWithIngredientsById(recipeId)
 }

@@ -51,6 +51,12 @@ android {
 
 dependencies {
 
+    // WorkManager
+    def work_version = "2.8.1"
+    implementation "androidx.work:work-runtime-ktx:$work_version"
+    androidTestImplementation "androidx.work:work-testing:$work_version"
+
+    // Core
     implementation 'com.google.devtools.ksp:symbol-processing-api:1.8.20-1.0.11'
     implementation 'androidx.core:core-ktx:1.10.1'
     implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.6.1'
@@ -75,19 +81,19 @@ dependencies {
     implementation "io.coil-kt:coil-compose:2.4.0"
 
     // Accompanist
-    implementation "com.google.accompanist:accompanist-navigation-animation:0.31.3-beta"
-
+    implementation "com.google.accompanist:accompanist-navigation-animation:0.31.4-beta"
+    implementation "com.google.accompanist:accompanist-permissions:0.31.4-beta"
     // Activity
     implementation "androidx.activity:activity-ktx:1.7.2"
 
     // Hilt
-    implementation "com.google.dagger:hilt-android:2.44"
-    kapt "com.google.dagger:hilt-compiler:2.44"
+    implementation "com.google.dagger:hilt-android:2.46.1"
+    kapt "com.google.dagger:hilt-compiler:2.44.2"
     implementation 'androidx.hilt:hilt-navigation-compose:1.0.0'
 
     // Hilt testing dependencies
     androidTestImplementation "com.google.dagger:hilt-android-testing:2.44"
-    kaptAndroidTest "com.google.dagger:hilt-compiler:2.44"
+    kaptAndroidTest "com.google.dagger:hilt-compiler:2.44.2"
 
     // Settings Compose
     implementation 'com.github.alorma:compose-settings-ui-m3:0.27.0'
@@ -95,7 +101,7 @@ dependencies {
     implementation "androidx.datastore:datastore-preferences:1.0.0"
 
     // Room
-    def room_version = "2.5.1"
+    def room_version = "2.5.2"
     implementation "androidx.room:room-runtime:$room_version"
     annotationProcessor "androidx.room:room-compiler:$room_version"
     ksp "androidx.room:room-compiler:$room_version"
