@@ -23,10 +23,9 @@ class AlarmManagerModule {
     @Singleton
     fun provideAlarmUtils(
         @ApplicationContext appContext: Context,
-        alarmManager: AlarmManager,
         notificationManager: NotificationManagerCompat
     ): AlarmUtils {
-        return AlarmUtils(appContext, alarmManager, notificationManager)
+        return AlarmUtils(appContext, notificationManager)
     }
     // TODO: Move to somewhere else?
     @Provides

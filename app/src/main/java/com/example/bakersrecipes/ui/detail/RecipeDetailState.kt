@@ -12,6 +12,12 @@ data class StepState(
     val stepId:Int,
     val description: String,
     val duration: Float,
-    val isActive: Boolean = false,
+    val timerState: TimerState = TimerState.INACTIVE,
     val remainingTime: Long = duration.toLong(),
 )
+
+enum class TimerState {
+    INACTIVE,
+    SCHEDULED,
+    RINGING
+}

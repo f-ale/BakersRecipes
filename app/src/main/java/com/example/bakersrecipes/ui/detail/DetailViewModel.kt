@@ -72,7 +72,7 @@ class DetailViewModel @Inject constructor(
                     stepDisplayList = _recipeDetailState.value.stepDisplayList.map { stepState ->
                         if (stepState.stepId == stepId) {
                             stepState.copy(
-                                isActive = true,
+                                timerState = TimerState.SCHEDULED,
                                 remainingTime = millisUntilFinished
                             )
                         } else {
@@ -87,7 +87,7 @@ class DetailViewModel @Inject constructor(
                 val updatedState = _recipeDetailState.value.copy(
                     stepDisplayList = _recipeDetailState.value.stepDisplayList.map { stepState ->
                         if (stepState.stepId == stepId) {
-                            stepState.copy(isActive = false)
+                            stepState.copy(timerState = TimerState.RINGING)
                         } else {
                             stepState
                         }
@@ -106,7 +106,7 @@ class DetailViewModel @Inject constructor(
         val updatedState = _recipeDetailState.value.copy(
             stepDisplayList = _recipeDetailState.value.stepDisplayList.map { stepState ->
                 if (stepState.stepId == stepId) {
-                    stepState.copy(isActive = true)
+                    stepState.copy(timerState = TimerState.SCHEDULED)
                 } else {
                     stepState
                 }
@@ -124,13 +124,14 @@ class DetailViewModel @Inject constructor(
         val updatedState = _recipeDetailState.value.copy(
             stepDisplayList = _recipeDetailState.value.stepDisplayList.map { stepState ->
                 if (stepState.stepId == stepId) {
-                    stepState.copy(isActive = false, remainingTime = stepState.duration.toLong())
+                    stepState.copy(timerState = TimerState.INACTIVE, remainingTime = stepState.duration.toLong())
                 } else {
                     stepState
                 }
             }
         )
         _recipeDetailState.value = updatedState
+
         alarmUtils.cancelAlarm(stepId) // Cancel the alarm/notification
     }
     fun getShareIntent():Intent {

@@ -230,7 +230,7 @@ fun StepItem(
                     )
 
                     Text(
-                        if(step.isActive) {
+                        if(step.timerState == TimerState.SCHEDULED) {
                             (step.remainingTime.toFloat() / (60*1000)).toString()
                         }
                         else
@@ -240,14 +240,14 @@ fun StepItem(
                         textAlign = TextAlign.Center
                     )
                 }
-                if(step.isActive)
+                if(step.timerState == TimerState.SCHEDULED || step.timerState == TimerState.RINGING)
                 {
                     IconButton(
                         onClick = { onAlarmCanceled(step.stepId) }
                     ) {
                         Icon(Icons.Default.Close, "Cancel Alarm")
                     }
-                } else {
+                } else if(step.timerState == TimerState.INACTIVE) {
                     IconButton(
                         onClick = { onAlarmSet(step.stepId, step.duration.roundToInt()) }
                     ) {
