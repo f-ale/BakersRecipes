@@ -3,21 +3,21 @@ package com.example.bakersrecipes.receivers
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.media.Ringtone
-import android.media.RingtoneManager
-import android.net.Uri
+import com.example.bakersrecipes.utils.AlarmUtil
+import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
-class AlarmReceiver : BroadcastReceiver() {
+@AndroidEntryPoint
+class AlarmReceiver: BroadcastReceiver() {
+    @Inject
+    lateinit var alarmUtil: AlarmUtil
     override fun onReceive(context: Context, intent: Intent) {
-        // Play the ringing sound
-        playRingingSound(context)
-    }
+        val alarmId = intent.getIntExtra("ALARM_ID", -1)
+        // Call cancelAlarm with the received alarmId
+        if(alarmId != -1)
+        {
+            alarmUtil.cancelAlarm(alarmId)
+        }
 
-    private fun playRingingSound(context: Context) {
-        val ringtoneUri: Uri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
-        val ringtone: Ringtone = RingtoneManager.getRingtone(context, ringtoneUri)
-
-        // Start playing the ringing sound
-        ringtone.play()
     }
 }

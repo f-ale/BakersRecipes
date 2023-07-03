@@ -8,11 +8,13 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.bakersrecipes.data.AlarmStates
 import com.example.bakersrecipes.data.Ingredient
 import com.example.bakersrecipes.data.RecipeDatabase
 import com.example.bakersrecipes.data.Step
+import com.example.bakersrecipes.data.StepState
 import com.example.bakersrecipes.data.relations.RecipeWithIngredients
-import com.example.bakersrecipes.utils.AlarmUtils
+import com.example.bakersrecipes.utils.AlarmUtil
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -24,7 +26,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class DetailViewModel @Inject constructor(
-    private val alarmUtils: AlarmUtils,
+    private val alarmUtil: AlarmUtil,
     private val db:RecipeDatabase,
     private val dataStore: DataStore<Preferences>,
     savedStateHandle: SavedStateHandle
@@ -64,7 +66,6 @@ class DetailViewModel @Inject constructor(
         }
     }
     private val timers: MutableMap<Int, CountDownTimer?> = mutableMapOf()
-
     fun setAlarm(stepId: Int, duration:Int) {
         val timer = object : CountDownTimer(duration.toLong() * 60 * 1000, 1000) {
             override fun onTick(millisUntilFinished: Long) {
@@ -72,9 +73,10 @@ class DetailViewModel @Inject constructor(
                     stepDisplayList = _recipeDetailState.value.stepDisplayList.map { stepState ->
                         if (stepState.stepId == stepId) {
                             stepState.copy(
-                                timerState = TimerState.SCHEDULED,
-                                remainingTime = millisUntilFinished
-                            )
+                                alarmState = stepState.alarmState.copy(
+                                    state = AlarmStates.SCHEDULED,
+                                    remainingTime = millisUntilFinished
+                                ))
                         } else {
                             stepState
                         }
@@ -87,13 +89,15 @@ class DetailViewModel @Inject constructor(
                 val updatedState = _recipeDetailState.value.copy(
                     stepDisplayList = _recipeDetailState.value.stepDisplayList.map { stepState ->
                         if (stepState.stepId == stepId) {
-                            stepState.copy(timerState = TimerState.RINGING)
+                            stepState.copy(alarmState = stepState.alarmState.copy(
+                                state = AlarmStates.RINGING
+                            ))
                         } else {
                             stepState
                         }
                     }
                 )
-                alarmUtils.notify(
+                alarmUtil.notify(
                     stepId,
                     _recipeDetailState.value
                         .stepDisplayList.find { it.stepId == stepId }?.description ?: "")
@@ -106,7 +110,9 @@ class DetailViewModel @Inject constructor(
         val updatedState = _recipeDetailState.value.copy(
             stepDisplayList = _recipeDetailState.value.stepDisplayList.map { stepState ->
                 if (stepState.stepId == stepId) {
-                    stepState.copy(timerState = TimerState.SCHEDULED)
+                    stepState.copy(alarmState = stepState.alarmState.copy(
+                        state = AlarmStates.SCHEDULED
+                    ))
                 } else {
                     stepState
                 }
@@ -114,7 +120,7 @@ class DetailViewModel @Inject constructor(
         )
         _recipeDetailState.value = updatedState
 
-        alarmUtils.setAlarm(stepId, duration) // Set the alarm/notification
+        alarmUtil.setAlarm(stepId, duration) // Set the alarm/notification
     }
 
     fun cancelAlarm(stepId: Int) {
@@ -124,7 +130,10 @@ class DetailViewModel @Inject constructor(
         val updatedState = _recipeDetailState.value.copy(
             stepDisplayList = _recipeDetailState.value.stepDisplayList.map { stepState ->
                 if (stepState.stepId == stepId) {
-                    stepState.copy(timerState = TimerState.INACTIVE, remainingTime = stepState.duration.toLong())
+                    stepState.copy(alarmState = stepState.alarmState.copy(
+                        state = AlarmStates.INACTIVE,
+                        remainingTime = stepState.duration.toLong()
+                    ))
                 } else {
                     stepState
                 }
@@ -132,7 +141,7 @@ class DetailViewModel @Inject constructor(
         )
         _recipeDetailState.value = updatedState
 
-        alarmUtils.cancelAlarm(stepId) // Cancel the alarm/notification
+        alarmUtil.cancelAlarm(stepId) // Cancel the alarm/notification
     }
     fun getShareIntent():Intent {
         val recipeName = recipeDetailState.value.recipe?.name ?: ""

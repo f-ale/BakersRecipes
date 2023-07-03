@@ -3,7 +3,7 @@ package com.example.bakersrecipes.di
 import android.app.AlarmManager
 import android.content.Context
 import androidx.core.app.NotificationManagerCompat
-import com.example.bakersrecipes.utils.AlarmUtils
+import com.example.bakersrecipes.utils.AlarmUtil
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -24,8 +24,8 @@ class AlarmManagerModule {
     fun provideAlarmUtils(
         @ApplicationContext appContext: Context,
         notificationManager: NotificationManagerCompat
-    ): AlarmUtils {
-        return AlarmUtils(appContext, notificationManager)
+    ): AlarmUtil {
+        return AlarmUtil(appContext, notificationManager)
     }
     // TODO: Move to somewhere else?
     @Provides

@@ -19,6 +19,7 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -34,6 +35,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
@@ -47,9 +49,10 @@ import androidx.core.content.ContextCompat.startActivity
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import com.example.bakersrecipes.R
+import com.example.bakersrecipes.data.AlarmStates
+import com.example.bakersrecipes.data.StepState
 import com.example.bakersrecipes.ui.common.BackButton
 import com.example.bakersrecipes.ui.theme.BakersRecipesTheme
-import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import kotlin.math.roundToInt
 
 @Preview(showBackground = true)
@@ -62,7 +65,7 @@ fun RecipeDetailScreenPreview()
     }*/
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RecipeDetailScreen( // TODO: Make scrollable
     viewModel: DetailViewModel,
@@ -204,7 +207,16 @@ fun StepItem(
     modifier: Modifier = Modifier
 )
 {
-    Card {
+    val cardColors =
+        if(step.alarmState.state == AlarmStates.RINGING)
+            CardDefaults.cardColors(containerColor = Color.Red) // TODO: Change color
+        else {
+            CardDefaults.cardColors()
+        }
+
+    Card(
+        colors = cardColors
+    ) {
         Box (modifier = modifier) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -230,8 +242,8 @@ fun StepItem(
                     )
 
                     Text(
-                        if(step.timerState == TimerState.SCHEDULED) {
-                            (step.remainingTime.toFloat() / (60*1000)).toString()
+                        if(step.alarmState.state == AlarmStates.SCHEDULED) {
+                            (step.alarmState.remainingTime.toFloat() / (60*1000)).toString()
                         }
                         else
                         {
@@ -240,14 +252,15 @@ fun StepItem(
                         textAlign = TextAlign.Center
                     )
                 }
-                if(step.timerState == TimerState.SCHEDULED || step.timerState == TimerState.RINGING)
+                if(step.alarmState.state == AlarmStates.SCHEDULED
+                    || step.alarmState.state == AlarmStates.RINGING)
                 {
                     IconButton(
                         onClick = { onAlarmCanceled(step.stepId) }
                     ) {
                         Icon(Icons.Default.Close, "Cancel Alarm")
                     }
-                } else if(step.timerState == TimerState.INACTIVE) {
+                } else if(step.alarmState.state == AlarmStates.INACTIVE) {
                     IconButton(
                         onClick = { onAlarmSet(step.stepId, step.duration.roundToInt()) }
                     ) {
