@@ -3,6 +3,7 @@ package com.example.bakersrecipes.di
 import android.app.AlarmManager
 import android.content.Context
 import androidx.core.app.NotificationManagerCompat
+import com.example.bakersrecipes.repositories.StepRepository
 import com.example.bakersrecipes.utils.AlarmUtil
 import dagger.Module
 import dagger.Provides
@@ -19,6 +20,14 @@ class AlarmManagerModule {
     fun provideAlarmManager(@ApplicationContext appContext: Context): AlarmManager {
         return appContext.getSystemService(Context.ALARM_SERVICE) as AlarmManager
     }
+    @Provides
+    @Singleton
+    fun provideStepRepository(
+        alarmUtil: AlarmUtil
+    ): StepRepository {
+        return StepRepository(alarmUtil)
+    }
+
     @Provides
     @Singleton
     fun provideAlarmUtils(

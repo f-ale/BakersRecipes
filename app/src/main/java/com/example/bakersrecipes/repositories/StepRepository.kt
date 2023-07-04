@@ -9,8 +9,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import okhttp3.internal.toImmutableMap
 import javax.inject.Inject
+import javax.inject.Singleton
 import kotlin.math.roundToInt
 
+@Singleton
 class StepRepository @Inject constructor(
     val alarmUtil: AlarmUtil
 ) {
@@ -65,6 +67,7 @@ private val stepStates: MutableMap<Int, MutableMap<Int, MutableStateFlow<StepSta
                         )
 
                         alarmUtil.notify(
+                            recipeId,
                             stepId,
                             stepState.value.description
                         )
@@ -79,7 +82,7 @@ private val stepStates: MutableMap<Int, MutableMap<Int, MutableStateFlow<StepSta
 
                 timer.start()
 
-                alarmUtil.setAlarm(stepId, stepState.value.duration.roundToInt())
+                alarmUtil.setAlarm(recipeId, stepId, stepState.value.duration.roundToInt())
             }
         }
     }
@@ -95,7 +98,7 @@ private val stepStates: MutableMap<Int, MutableMap<Int, MutableStateFlow<StepSta
                     )
 
                 stepState.value.alarmState.timer?.cancel()
-                alarmUtil.cancelAlarm(stepId)
+                alarmUtil.cancelAlarm(recipeId, stepId)
             }
         }
     }

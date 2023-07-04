@@ -52,7 +52,7 @@ import com.example.bakersrecipes.R
 import com.example.bakersrecipes.data.AlarmStates
 import com.example.bakersrecipes.data.StepState
 import com.example.bakersrecipes.ui.common.BackButton
-import com.example.bakersrecipes.ui.theme.BakersRecipesTheme
+import kotlinx.coroutines.flow.StateFlow
 import kotlin.math.roundToInt
 
 @Preview(showBackground = true)
@@ -152,8 +152,8 @@ fun RecipeDetailScreen( // TODO: Make scrollable
                         Divider()
                         StepsList(
                             steps = recipeDetailState.stepDisplayList,
-                            onAlarmSet = { id, duration ->
-                                viewModel.setAlarm(id, duration)
+                            onAlarmSet = { id ->
+                                viewModel.setAlarm(id)
                             },
                             onAlarmCanceled = {
                                 id -> viewModel.cancelAlarm(id)
@@ -167,6 +167,7 @@ fun RecipeDetailScreen( // TODO: Make scrollable
 
 }
 
+/*
 @Preview(showBackground = true)
 @Composable
 fun StepsListPreview()
@@ -181,10 +182,12 @@ fun StepsListPreview()
         )
     }
 }
+*/
+
 @Composable
 fun StepsList(
-    steps: List<StepState>,
-    onAlarmSet: (Int, Int) -> Unit,
+    steps: List<StateFlow<StepState>>,
+    onAlarmSet: (Int) -> Unit,
     onAlarmCanceled: (Int) -> Unit,
     modifier: Modifier = Modifier
 )
@@ -201,14 +204,16 @@ fun StepsList(
 
 @Composable
 fun StepItem(
-    step: StepState,
-    onAlarmSet: (Int, Int) -> Unit,
+    step: StateFlow<StepState>,
+    onAlarmSet: (Int) -> Unit,
     onAlarmCanceled: (Int) -> Unit,
     modifier: Modifier = Modifier
 )
 {
+    val stepState = step.collectAsStateWithLifecycle()
+
     val cardColors =
-        if(step.alarmState.state == AlarmStates.RINGING)
+        if(stepState.value.alarmState.state == AlarmStates.RINGING)
             CardDefaults.cardColors(containerColor = Color.Red) // TODO: Change color
         else {
             CardDefaults.cardColors()
@@ -229,40 +234,40 @@ fun StepItem(
                 modifier = Modifier.weight(1f)
                 ) {
                     Text(
-                        step.stepId.toString() + ".",
+                        stepState.value.stepId.toString() + ".",
                         textAlign = TextAlign.Center,
                         style = MaterialTheme.typography.bodyLarge,
                         modifier = modifier.padding(horizontal = 16.dp)
                     )
                     Text(
-                        step.description,
+                        stepState.value.description,
                         Modifier
                             .padding(8.dp)
                             .weight(4f)
                     )
 
                     Text(
-                        if(step.alarmState.state == AlarmStates.SCHEDULED) {
-                            (step.alarmState.remainingTime.toFloat() / (60*1000)).toString()
+                        if(stepState.value.alarmState.state == AlarmStates.SCHEDULED) {
+                            (stepState.value.alarmState.remainingTime.toFloat() / (60*1000)).toString()
                         }
                         else
                         {
-                            step.duration.roundToInt().toString()+" min"
+                            stepState.value.duration.roundToInt().toString()+" min"
                         },
                         textAlign = TextAlign.Center
                     )
                 }
-                if(step.alarmState.state == AlarmStates.SCHEDULED
-                    || step.alarmState.state == AlarmStates.RINGING)
+                if(stepState.value.alarmState.state == AlarmStates.SCHEDULED
+                    || stepState.value.alarmState.state == AlarmStates.RINGING)
                 {
                     IconButton(
-                        onClick = { onAlarmCanceled(step.stepId) }
+                        onClick = { onAlarmCanceled(stepState.value.stepId) }
                     ) {
                         Icon(Icons.Default.Close, "Cancel Alarm")
                     }
-                } else if(step.alarmState.state == AlarmStates.INACTIVE) {
+                } else if(stepState.value.alarmState.state == AlarmStates.INACTIVE) {
                     IconButton(
-                        onClick = { onAlarmSet(step.stepId, step.duration.roundToInt()) }
+                        onClick = { onAlarmSet(stepState.value.stepId) }
                     ) {
                         Icon(Icons.Default.PlayArrow, "Set Alarm")
                     }

@@ -1,20 +1,17 @@
 package com.example.bakersrecipes.ui.detail
 
 import android.content.Intent
-import android.os.CountDownTimer
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.bakersrecipes.data.AlarmStates
 import com.example.bakersrecipes.data.Ingredient
 import com.example.bakersrecipes.data.RecipeDatabase
 import com.example.bakersrecipes.data.Step
-import com.example.bakersrecipes.data.StepState
 import com.example.bakersrecipes.data.relations.RecipeWithIngredients
-import com.example.bakersrecipes.utils.AlarmUtil
+import com.example.bakersrecipes.repositories.StepRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -26,9 +23,9 @@ import javax.inject.Inject
 
 @HiltViewModel
 class DetailViewModel @Inject constructor(
-    private val alarmUtil: AlarmUtil,
     private val db:RecipeDatabase,
     private val dataStore: DataStore<Preferences>,
+    private val stepRepository: StepRepository,
     savedStateHandle: SavedStateHandle
 ): ViewModel() {
     val recipeId:Int = savedStateHandle.get<Int>("recipeId") ?: -1
@@ -49,14 +46,7 @@ class DetailViewModel @Inject constructor(
                         ingredientDisplayList = recipe.ingredients.map {
                                 ingredient -> Pair(ingredient.name, ingredient.percent)
                         }.sortedByDescending { it.second },
-                        stepDisplayList = recipe.steps.map {
-                            step ->
-                            StepState(
-                                stepId = step.id ?: -1,
-                                description = step.description,
-                                duration = step.duration
-                            )
-                        }
+                        stepDisplayList = stepRepository.initializeStepStates(recipe.steps).values.toList()
                     )
                     // We want ingredients to be sorted by highest percentage
                     ingredients = recipe.ingredients.sortedByDescending { it.percent }
@@ -65,83 +55,11 @@ class DetailViewModel @Inject constructor(
             }
         }
     }
-    private val timers: MutableMap<Int, CountDownTimer?> = mutableMapOf()
-    fun setAlarm(stepId: Int, duration:Int) {
-        val timer = object : CountDownTimer(duration.toLong() * 60 * 1000, 1000) {
-            override fun onTick(millisUntilFinished: Long) {
-                val updatedState = _recipeDetailState.value.copy(
-                    stepDisplayList = _recipeDetailState.value.stepDisplayList.map { stepState ->
-                        if (stepState.stepId == stepId) {
-                            stepState.copy(
-                                alarmState = stepState.alarmState.copy(
-                                    state = AlarmStates.SCHEDULED,
-                                    remainingTime = millisUntilFinished
-                                ))
-                        } else {
-                            stepState
-                        }
-                    }
-                )
-                _recipeDetailState.value = updatedState
-            }
-
-            override fun onFinish() {
-                val updatedState = _recipeDetailState.value.copy(
-                    stepDisplayList = _recipeDetailState.value.stepDisplayList.map { stepState ->
-                        if (stepState.stepId == stepId) {
-                            stepState.copy(alarmState = stepState.alarmState.copy(
-                                state = AlarmStates.RINGING
-                            ))
-                        } else {
-                            stepState
-                        }
-                    }
-                )
-                alarmUtil.notify(
-                    stepId,
-                    _recipeDetailState.value
-                        .stepDisplayList.find { it.stepId == stepId }?.description ?: "")
-                _recipeDetailState.value = updatedState
-            }
-        }
-
-        timers[stepId] = timer
-        timer.start()
-        val updatedState = _recipeDetailState.value.copy(
-            stepDisplayList = _recipeDetailState.value.stepDisplayList.map { stepState ->
-                if (stepState.stepId == stepId) {
-                    stepState.copy(alarmState = stepState.alarmState.copy(
-                        state = AlarmStates.SCHEDULED
-                    ))
-                } else {
-                    stepState
-                }
-            }
-        )
-        _recipeDetailState.value = updatedState
-
-        alarmUtil.setAlarm(stepId, duration) // Set the alarm/notification
+    fun setAlarm(stepId: Int) {
+        stepRepository.setAlarm(recipeId, stepId)
     }
-
     fun cancelAlarm(stepId: Int) {
-        val timer = timers[stepId]
-        timer?.cancel()
-        timers.remove(stepId)
-        val updatedState = _recipeDetailState.value.copy(
-            stepDisplayList = _recipeDetailState.value.stepDisplayList.map { stepState ->
-                if (stepState.stepId == stepId) {
-                    stepState.copy(alarmState = stepState.alarmState.copy(
-                        state = AlarmStates.INACTIVE,
-                        remainingTime = stepState.duration.toLong()
-                    ))
-                } else {
-                    stepState
-                }
-            }
-        )
-        _recipeDetailState.value = updatedState
-
-        alarmUtil.cancelAlarm(stepId) // Cancel the alarm/notification
+        stepRepository.cancelAlarm(recipeId, stepId)
     }
     fun getShareIntent():Intent {
         val recipeName = recipeDetailState.value.recipe?.name ?: ""
@@ -166,7 +84,7 @@ class DetailViewModel @Inject constructor(
         )
     }
     fun getWeightUnit(): Flow<String> {
-        return dataStore.data.map { it ->
+        return dataStore.data.map {
             if(it[booleanPreferencesKey("weight_unit")] == false)
                 "g"
             else

@@ -42,14 +42,15 @@ class AlarmUtil @Inject constructor(
         }
     }
     @SuppressLint("MissingPermission")
-    fun notify(stepId: Int, description: String) {
-        // Create a unique request code for the dismiss button PendingIntent
-        val requestCode = stepId + 1
+    fun notify(recipeId:Int, stepId: Int, description: String) {
+        // Create a unique requestCode by combining recipeId and stepId
+        val requestCode = (recipeId.toString() + stepId.toString()).hashCode()
 
         // Create an intent for the dismiss button
         val dismissIntent = Intent(context, AlarmReceiver::class.java).apply {
             action = "DISMISS_ALARM"
             putExtra("ALARM_ID", stepId)
+            putExtra("RECIPE_ID", recipeId)
         }
         val dismissPendingIntent = PendingIntent.getBroadcast(
             context,
@@ -79,20 +80,22 @@ class AlarmUtil @Inject constructor(
         }
     }
 
-    fun setAlarm(alarmId: Int, minutes: Int) {
+    fun setAlarm(recipeId:Int, alarmId: Int, minutes: Int) {
+        val tag = WORK_TAG_PREFIX + recipeId.toString() + alarmId.toString()
         val alarmWorkRequest = OneTimeWorkRequestBuilder<AlarmWorker>()
             .setInitialDelay(minutes.toLong(), java.util.concurrent.TimeUnit.MINUTES)
-            .addTag(WORK_TAG_PREFIX + alarmId)
+            .addTag(tag)
             .build()
 
         WorkManager.getInstance(context).enqueueUniqueWork(
-            WORK_TAG_PREFIX + alarmId,
+            tag,
             ExistingWorkPolicy.REPLACE,
             alarmWorkRequest
         )
     }
-    fun cancelAlarm(alarmId: Int) {
-        WorkManager.getInstance(context).cancelAllWorkByTag(WORK_TAG_PREFIX + alarmId)
+    fun cancelAlarm(recipeId:Int, alarmId: Int) {
+        val tag = WORK_TAG_PREFIX + recipeId.toString() + alarmId.toString()
+        WorkManager.getInstance(context).cancelAllWorkByTag(tag)
         notificationManager.cancel(alarmId)
     }
 }
