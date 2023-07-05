@@ -67,6 +67,7 @@ class AlarmUtil @Inject constructor(
             .setSmallIcon(R.drawable.ic_launcher_background)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setCategory(NotificationCompat.CATEGORY_ALARM)
+            .setOngoing(true)
             .setAutoCancel(true)
             .setOnlyAlertOnce(true)
             .addAction(
@@ -82,7 +83,7 @@ class AlarmUtil @Inject constructor(
     }
 
     fun setAlarm(recipeId:Int, alarmId: Int, minutes: Int) {
-        val tag = WORK_TAG_PREFIX + recipeId.toString() + alarmId.toString()
+        val tag = "$WORK_TAG_PREFIX-$recipeId-$alarmId"
         val alarmWorkRequest = OneTimeWorkRequestBuilder<AlarmWorker>()
             .setInitialDelay(minutes.toLong(), java.util.concurrent.TimeUnit.MINUTES)
             .addTag(tag)

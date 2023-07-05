@@ -239,7 +239,8 @@ fun EditableIngredientList(
                 },
                 onDeleteIngredient = { onDeleteIngredient(ingredientField) },
                 weightUnit = weightUnit,
-                showWeight = showWeight
+                showWeight = showWeight,
+                modifier = Modifier.padding(vertical = 4.dp)
             )
         }
         item {

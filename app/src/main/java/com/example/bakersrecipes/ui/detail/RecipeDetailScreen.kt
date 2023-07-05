@@ -31,11 +31,13 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
@@ -75,11 +77,13 @@ fun RecipeDetailScreen( // TODO: Make scrollable
 ) {
     val recipeDetailState by viewModel.recipeDetailState.collectAsStateWithLifecycle()
     val weightUnit by viewModel.getWeightUnit().collectAsStateWithLifecycle("g")
+    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
 
     val context = LocalContext.current
 
     // A surface container using the 'background' color from the theme
     Scaffold(
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
                  MediumTopAppBar(
                      title = {
@@ -102,8 +106,8 @@ fun RecipeDetailScreen( // TODO: Make scrollable
                              },
                              content = { Icon(Icons.Outlined.Share, "Share") }
                          )
-                     }
-
+                     },
+                     scrollBehavior = scrollBehavior
                  )
         }
     ) { paddingValues ->
@@ -185,7 +189,10 @@ fun RecipeDetailScreen( // TODO: Make scrollable
                             },
                         modifier = Modifier.padding(horizontal = 24.dp, vertical = 4.dp)
                         )
-
+                }
+                
+                item {
+                    Spacer(modifier = Modifier.height(32.dp))
                 }
             }
         }
@@ -248,12 +255,12 @@ fun StepItem(
                         stepState.value.stepId.toString() + ".",
                         textAlign = TextAlign.Center,
                         style = MaterialTheme.typography.bodyLarge,
-                        modifier = modifier.padding(horizontal = 16.dp)
+                        modifier = modifier.padding(horizontal = 2.dp)
                     )
                     Text(
                         stepState.value.description,
                         Modifier
-                            .padding(8.dp)
+                            .padding(4.dp)
                             .weight(4f)
                     )
 

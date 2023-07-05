@@ -33,6 +33,9 @@ fun LazyListScope.ingredientList(
             modifier = Modifier.padding(horizontal = paddingHorizontal)
         )
     }
+    item {
+        Spacer(modifier = Modifier.height(6.dp))
+    }
     if(ingredients.isNotEmpty()) {
         items(ingredients) {
                 ingredient: Pair<String,Float> ->
@@ -42,7 +45,7 @@ fun LazyListScope.ingredientList(
                     ingredient.second * 100 },
                 modifier = Modifier.padding(
                     horizontal = paddingHorizontal + 16.dp,
-                    vertical = 8.dp
+                    vertical = 2.dp
                 ),
                 showWeight = showWeight,
                 weightUnit = weightUnit,
