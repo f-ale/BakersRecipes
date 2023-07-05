@@ -103,7 +103,7 @@ class EditRecipeViewModel @Inject constructor(
 
                     if(recipeId == null)
                     {
-                        recipeId = db.recipeDao().getRecipeIdByName(recipeName)
+                        recipeId = db.recipeDao().getRecipeIdByName(recipeName) // TODO: Unclean
                         // TODO: this will be useless when we replace room upsert with something better
                     }
 

@@ -22,6 +22,7 @@ private const val WORK_TAG_PREFIX = "alarmworker_"
 
 class AlarmUtil @Inject constructor(
     @ApplicationContext private val context: Context,
+    private val workManager: WorkManager,
     private val notificationManager: NotificationManagerCompat,
 ) {
     init {
@@ -94,8 +95,8 @@ class AlarmUtil @Inject constructor(
         )
     }
     fun cancelAlarm(recipeId:Int, alarmId: Int) {
-        val tag = WORK_TAG_PREFIX + recipeId.toString() + alarmId.toString()
-        WorkManager.getInstance(context).cancelAllWorkByTag(tag)
+        val tag = "$WORK_TAG_PREFIX-$recipeId-$alarmId"
+        workManager.cancelAllWorkByTag(tag)
         notificationManager.cancel(alarmId)
     }
 }

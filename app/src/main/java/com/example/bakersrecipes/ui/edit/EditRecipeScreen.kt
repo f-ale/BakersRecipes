@@ -22,14 +22,12 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -44,7 +42,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -63,7 +60,6 @@ import coil.compose.AsyncImage
 import com.example.bakersrecipes.R
 import com.example.bakersrecipes.ui.common.BackButton
 import com.example.bakersrecipes.ui.theme.BakersRecipesTheme
-import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -74,7 +70,6 @@ fun EditRecipeScreen(
     onRecipeDelete: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val coroutineScope = rememberCoroutineScope()
     val editRecipeState: EditRecipeState by viewModel.editRecipeState.collectAsState()
     var overflowMenuExpanded by remember { mutableStateOf(false) }
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
@@ -132,30 +127,6 @@ fun EditRecipeScreen(
                 scrollBehavior = scrollBehavior,
             )
         },
-        floatingActionButton = {
-            Row {
-                FloatingActionButton(onClick = {
-                    viewModel.newIngredient()
-                    coroutineScope.launch {
-                        listState.animateScrollToItem(
-                            editRecipeState.ingredients.lastIndex,
-                            1
-                        )
-                    }
-                }) {
-                    Icon(Icons.Filled.Add, stringResource(id = R.string.new_ingredient))
-                }
-
-                FloatingActionButton(onClick = {
-                    viewModel.newStep()
-                    coroutineScope.launch {
-                        // TODO: Scroll to bottom
-                    }
-                }) {
-                    Icon(Icons.Filled.Add, stringResource(id = R.string.new_ingredient))
-                }
-            }
-        }
     ) { paddingValues ->
         Surface(
             modifier = modifier

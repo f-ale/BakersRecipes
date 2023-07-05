@@ -15,6 +15,7 @@ import androidx.core.app.ActivityCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.bakersrecipes.ui.detail.DetailViewModel
@@ -24,13 +25,11 @@ import com.example.bakersrecipes.ui.edit.EditRecipeViewModel
 import com.example.bakersrecipes.ui.home.BakersRecipeHome
 import com.example.bakersrecipes.ui.settings.SettingsScreen
 import com.example.bakersrecipes.ui.theme.BakersRecipesTheme
-import androidx.navigation.compose.composable
 import dagger.hilt.android.AndroidEntryPoint
 
 /*
 TODO: Search bar
 TODO: Online functionality
-TODO: Step timers
 TODO: Multiline input
 TODO: Animations
 TODO: Pretty theme

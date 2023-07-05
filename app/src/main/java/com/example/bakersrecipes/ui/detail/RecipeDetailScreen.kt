@@ -4,13 +4,14 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -34,7 +35,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -52,6 +52,7 @@ import com.example.bakersrecipes.R
 import com.example.bakersrecipes.data.AlarmStates
 import com.example.bakersrecipes.data.StepState
 import com.example.bakersrecipes.ui.common.BackButton
+import com.example.bakersrecipes.ui.theme.Typography
 import kotlinx.coroutines.flow.StateFlow
 import kotlin.math.roundToInt
 
@@ -111,94 +112,104 @@ fun RecipeDetailScreen( // TODO: Make scrollable
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            Column {
-                AsyncImage(
-                    model = recipeDetailState.recipe?.image ?: R.drawable.ic_launcher_background,
-                    recipeDetailState.recipe?.name ?: "Thumbnail",
-                    Modifier
-                        .height(248.dp)
-                        .fillMaxWidth()
-                        .padding(horizontal = 24.dp)
-                        .clip(RoundedCornerShape(16.dp)),
-                    contentScale = ContentScale.FillWidth
-                )
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
-                    modifier = Modifier.padding(vertical = 16.dp, horizontal = 24.dp)
-                ) {
-                    recipeDetailState.recipe?.description?.let {
-                        Text(
-                            text = it,
-                            style = MaterialTheme.typography.bodyMedium
-                        )
+            LazyColumn {
+                recipeDetailState.recipe?.description?.let { description ->
+                    item {
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 24.dp)
+                        ) {
+                            Column {
+                                AsyncImage(
+                                    model =
+                                    recipeDetailState.recipe?.image
+                                        ?: R.drawable.ic_launcher_background,
+                                    recipeDetailState.recipe?.name
+                                        ?: "Thumbnail",
+                                    Modifier
+                                        .height(128.dp)
+                                        .fillMaxWidth(),
+                                    contentScale = ContentScale.FillWidth
+                                )
+                                Text(
+                                    text = description,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    modifier = Modifier.padding(16.dp)
+                                )
+                            }
+                        }
                     }
-                    IngredientList(
-                        ingredients = recipeDetailState.ingredientDisplayList,
-                        showWeight = recipeDetailState.totalRecipeWeight != null,
-                        weightUnit = weightUnit
-                    )
-                    if(recipeDetailState.ingredientDisplayList.isNotEmpty())
-                    {
+                }
+
+                item {
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
+
+                ingredientList(
+                    ingredients = recipeDetailState.ingredientDisplayList,
+                    showWeight = recipeDetailState.totalRecipeWeight != null,
+                    weightUnit = weightUnit,
+                    paddingHorizontal = 24.dp,
+                    paddingBottom = 16.dp,
+                )
+
+                if(recipeDetailState.ingredientDisplayList.isNotEmpty())
+                {
+                    item {
                         Divider()
+                    }
+                    item {
                         MakeRecipeForm(
                             recipeDetailState.totalRecipeWeight?.toString() ?: "",
                             onUpdateTotalRecipeWeight =
                             { viewModel.updateMakeRecipeWeightFromString(it) },
-                            weightUnit = weightUnit
+                            weightUnit = weightUnit,
+                            modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp)
                         )
                     }
-                    if(recipeDetailState.stepDisplayList.isNotEmpty())
-                    {
-                        Divider()
-                        StepsList(
-                            steps = recipeDetailState.stepDisplayList,
-                            onAlarmSet = { id ->
+                }
+                if(recipeDetailState.stepDisplayList.isNotEmpty())
+                {
+                    item {
+                        Divider(modifier = Modifier.padding(bottom = 16.dp))
+                    }
+
+                    stepsList(
+                        steps = recipeDetailState.stepDisplayList,
+                        onAlarmSet = { id ->
                                 viewModel.setAlarm(id)
                             },
-                            onAlarmCanceled = {
+                        onAlarmCanceled = {
                                 id -> viewModel.cancelAlarm(id)
                             },
+                        modifier = Modifier.padding(horizontal = 24.dp, vertical = 4.dp)
                         )
-                    }
+
                 }
             }
         }
     }
-
 }
-
-/*
-@Preview(showBackground = true)
-@Composable
-fun StepsListPreview()
-{
-    BakersRecipesTheme {
-        StepsList(
-            listOf(
-                StepState(1,"Boil the water", 10f)
-            ),
-            { _, _ -> },
-            {}
-        )
-    }
-}
-*/
-
-@Composable
-fun StepsList(
+fun LazyListScope.stepsList(
     steps: List<StateFlow<StepState>>,
     onAlarmSet: (Int) -> Unit,
     onAlarmCanceled: (Int) -> Unit,
     modifier: Modifier = Modifier
 )
 {
-    LazyColumn(
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = modifier,
-    ) {
-        items(steps) { step ->
-            StepItem(step, onAlarmSet, onAlarmCanceled)
-        }
+    item {
+        Text(
+            "Timers",
+            style = Typography.titleMedium,
+            modifier = modifier
+        )
+    }
+    item {
+        Spacer(Modifier.height(8.dp))
+    }
+    items(steps) { step ->
+        StepItem(step, onAlarmSet, onAlarmCanceled, modifier = modifier)
     }
 }
 
@@ -208,8 +219,7 @@ fun StepItem(
     onAlarmSet: (Int) -> Unit,
     onAlarmCanceled: (Int) -> Unit,
     modifier: Modifier = Modifier
-)
-{
+) {
     val stepState = step.collectAsStateWithLifecycle()
 
     val cardColors =
@@ -220,9 +230,10 @@ fun StepItem(
         }
 
     Card(
-        colors = cardColors
+        colors = cardColors,
+        modifier = modifier
     ) {
-        Box (modifier = modifier) {
+        Box {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
@@ -283,9 +294,10 @@ fun StepItem(
 fun MakeRecipeForm(
     totalRecipeWeight: String,
     onUpdateTotalRecipeWeight: (String) -> Unit,
-    weightUnit: String
+    weightUnit: String,
+    modifier: Modifier = Modifier
 ) {
-    Column {
+    Column(modifier = modifier) {
         Text(
             stringResource(id = R.string.make_recipe),
             style = MaterialTheme.typography.titleMedium

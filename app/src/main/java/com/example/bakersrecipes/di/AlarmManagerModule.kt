@@ -3,6 +3,7 @@ package com.example.bakersrecipes.di
 import android.app.AlarmManager
 import android.content.Context
 import androidx.core.app.NotificationManagerCompat
+import androidx.work.WorkManager
 import com.example.bakersrecipes.repositories.StepRepository
 import com.example.bakersrecipes.utils.AlarmUtil
 import dagger.Module
@@ -30,11 +31,23 @@ class AlarmManagerModule {
 
     @Provides
     @Singleton
+    fun provideWorkManager(
+        @ApplicationContext appContext: Context
+    ): WorkManager {
+        return WorkManager.getInstance(appContext)
+    }
+    @Provides
+    @Singleton
     fun provideAlarmUtils(
         @ApplicationContext appContext: Context,
-        notificationManager: NotificationManagerCompat
+        notificationManager: NotificationManagerCompat,
+        workManager: WorkManager
     ): AlarmUtil {
-        return AlarmUtil(appContext, notificationManager)
+        return AlarmUtil(
+            context = appContext,
+            notificationManager = notificationManager,
+            workManager = workManager
+        )
     }
     // TODO: Move to somewhere else?
     @Provides
