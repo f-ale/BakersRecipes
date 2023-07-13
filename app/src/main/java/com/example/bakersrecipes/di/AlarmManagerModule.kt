@@ -41,12 +41,11 @@ class AlarmManagerModule {
     fun provideAlarmUtils(
         @ApplicationContext appContext: Context,
         notificationManager: NotificationManagerCompat,
-        workManager: WorkManager
+        alarmManager: AlarmManager,
     ): AlarmUtil {
         return AlarmUtil(
             context = appContext,
-            notificationManager = notificationManager,
-            workManager = workManager
+            alarmManager = alarmManager
         )
     }
     // TODO: Move to somewhere else?

@@ -13,10 +13,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.example.bakersrecipes.R
+import com.example.bakersrecipes.data.datatypes.Percentage
 import com.example.bakersrecipes.ui.theme.Typography
 
 fun LazyListScope.ingredientList(
-    ingredients: List<Pair<String, Float>>,
+    ingredients: List<Pair<String, Percentage>>,
     showWeight: Boolean,
     weightUnit: String,
     paddingTop: Dp = 0.dp,
@@ -38,11 +39,10 @@ fun LazyListScope.ingredientList(
     }
     if(ingredients.isNotEmpty()) {
         items(ingredients) {
-                ingredient: Pair<String,Float> ->
+                ingredient: Pair<String, Percentage> ->
             RecipeIngredient(
                 name = ingredient.first,
-                number = if(showWeight) {ingredient.second} else {
-                    ingredient.second * 100 },
+                number = ingredient.second,
                 modifier = Modifier.padding(
                     horizontal = paddingHorizontal + 16.dp,
                     vertical = 2.dp

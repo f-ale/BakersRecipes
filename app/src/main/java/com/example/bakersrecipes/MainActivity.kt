@@ -23,6 +23,7 @@ import com.example.bakersrecipes.ui.detail.RecipeDetailScreen
 import com.example.bakersrecipes.ui.edit.EditRecipeScreen
 import com.example.bakersrecipes.ui.edit.EditRecipeViewModel
 import com.example.bakersrecipes.ui.home.BakersRecipeHome
+import com.example.bakersrecipes.ui.home.HomeViewModel
 import com.example.bakersrecipes.ui.settings.SettingsScreen
 import com.example.bakersrecipes.ui.theme.BakersRecipesTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -74,7 +75,7 @@ enum class BakersRecipesDestinations()
 
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
-fun BakersRecipeApp(viewModel: RecipeViewModel = hiltViewModel()) {
+fun BakersRecipeApp(viewModel: HomeViewModel = hiltViewModel()) {
     val navController = rememberNavController()
 
     Box {

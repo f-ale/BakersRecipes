@@ -21,17 +21,17 @@ import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.MediumTopAppBar
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -45,6 +45,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat.startActivity
@@ -77,7 +78,7 @@ fun RecipeDetailScreen( // TODO: Make scrollable
 ) {
     val recipeDetailState by viewModel.recipeDetailState.collectAsStateWithLifecycle()
     val weightUnit by viewModel.getWeightUnit().collectAsStateWithLifecycle("g")
-    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
+    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
 
     val context = LocalContext.current
 
@@ -85,9 +86,13 @@ fun RecipeDetailScreen( // TODO: Make scrollable
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
-                 MediumTopAppBar(
+                 TopAppBar(
                      title = {
-                         Text(recipeDetailState.recipe?.name ?: "")
+                         Text(
+                             recipeDetailState.recipe?.name ?: "",
+                             maxLines = 1,
+                             overflow = TextOverflow.Ellipsis
+                         )
                      },
                      navigationIcon = {
                         BackButton(onClick = onNavigateUp)
@@ -161,7 +166,7 @@ fun RecipeDetailScreen( // TODO: Make scrollable
                 if(recipeDetailState.ingredientDisplayList.isNotEmpty())
                 {
                     item {
-                        Divider()
+                        //Divider()
                     }
                     item {
                         MakeRecipeForm(
@@ -176,7 +181,7 @@ fun RecipeDetailScreen( // TODO: Make scrollable
                 if(recipeDetailState.stepDisplayList.isNotEmpty())
                 {
                     item {
-                        Divider(modifier = Modifier.padding(bottom = 16.dp))
+                        //Divider(modifier = Modifier.padding(bottom = 16.dp))
                     }
 
                     stepsList(
@@ -198,6 +203,18 @@ fun RecipeDetailScreen( // TODO: Make scrollable
         }
     }
 }
+fun Long.toTimeDurationString(): String { // TODO: Move somewhere better
+    val hours = this / 1000 / 3600
+    val minutes = (this / 1000 / 60) % 60
+    val seconds = (this / 1000) % 60
+
+    return if (hours > 0) {
+        "%02d:%02d:%02d".format(hours, minutes, seconds)
+    } else {
+        "%02d:%02d".format(minutes, seconds)
+    }
+}
+
 fun LazyListScope.stepsList(
     steps: List<StateFlow<StepState>>,
     onAlarmSet: (Int) -> Unit,
@@ -266,7 +283,7 @@ fun StepItem(
 
                     Text(
                         if(stepState.value.alarmState.state == AlarmStates.SCHEDULED) {
-                            (stepState.value.alarmState.remainingTime.toFloat() / (60*1000)).toString()
+                            stepState.value.alarmState.remainingTime.toTimeDurationString()
                         }
                         else
                         {

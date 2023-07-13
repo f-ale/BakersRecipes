@@ -296,9 +296,6 @@ fun EditableIngredientList(
                 Text("Add Timed Step")
             }
         }
-        item {
-            Spacer(Modifier.height(78.dp))
-        }
     }
 }
 

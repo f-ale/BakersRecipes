@@ -16,7 +16,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.example.bakersrecipes.R
-import com.example.bakersrecipes.data.Recipe
 import com.example.bakersrecipes.ui.theme.BakersRecipesTheme
 import com.example.bakersrecipes.ui.theme.Typography
 
@@ -24,13 +23,13 @@ import com.example.bakersrecipes.ui.theme.Typography
 @Composable
 fun RecipeItemPreview() {
     BakersRecipesTheme {
-        RecipeItem(Recipe(name = "Android"), { })
+        RecipeItem(RecipeItemState(name = "Android"), { })
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RecipeItem(recipe: Recipe, onRecipeClicked: (recipeId: Int?) -> Unit, modifier: Modifier = Modifier) {
+fun RecipeItem(recipe: RecipeItemState, onRecipeClicked: (recipeId: Int?) -> Unit, modifier: Modifier = Modifier) {
     Card (
         onClick = { onRecipeClicked(recipe.id) },
         colors = CardDefaults.cardColors(
@@ -56,12 +55,10 @@ fun RecipeItem(recipe: Recipe, onRecipeClicked: (recipeId: Int?) -> Unit, modifi
                     style = Typography.titleMedium
                 )
 
-                recipe.description?.let { description ->
-                    Text(
-                        description,
-                        style = Typography.labelSmall
-                    )
-                }
+                Text(
+                    recipe.description,
+                    style = Typography.labelSmall
+                )
             }
 
         }

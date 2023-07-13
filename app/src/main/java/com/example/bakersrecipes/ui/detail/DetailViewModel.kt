@@ -10,6 +10,8 @@ import androidx.lifecycle.viewModelScope
 import com.example.bakersrecipes.data.Ingredient
 import com.example.bakersrecipes.data.RecipeDatabase
 import com.example.bakersrecipes.data.Step
+import com.example.bakersrecipes.data.datatypes.sumOf
+import com.example.bakersrecipes.data.datatypes.toPercentage
 import com.example.bakersrecipes.data.relations.RecipeWithIngredients
 import com.example.bakersrecipes.repositories.StepRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -19,6 +21,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import java.math.BigDecimal
 import javax.inject.Inject
 
 @HiltViewModel
@@ -70,8 +73,9 @@ class DetailViewModel @Inject constructor(
                 recipeName + "\n" + recipeDetailState.value.ingredientDisplayList.map {
                     val second:String =
                         if(recipeDetailState.value.totalRecipeWeight != null)
-                        { it.second.toInt().toString() + "g" } // TODO: Move these operations to an utility class
-                        else { it.second.toInt().times(100).toString() + "%" }
+                        { it.second.toUnformattedString() + "g" } // TODO: Move these operations to an utility class.
+                        // TODO: Not just toString, you need to do something since it's a percentage
+                        else { it.second.toString() + "%" }
                     it.first + " " + second + "\n"
                 }.reduce { acc, it -> acc + it }
             )
@@ -95,18 +99,21 @@ class DetailViewModel @Inject constructor(
     {
         try {
             if(totalRecipeWeight != "") {
-                updateMakeRecipeWeight(totalRecipeWeight.toInt())
+                if(totalRecipeWeight.length < 15)
+                {
+                    updateMakeRecipeWeight(totalRecipeWeight.toBigDecimal())
+                }
             } else {
                 resetMakeRecipe()
             }
         } catch (_: NumberFormatException) {}
     }
-    private fun updateMakeRecipeWeight(totalRecipeWeight:Int)
+    private fun updateMakeRecipeWeight(totalRecipeWeight:BigDecimal)
     {
-        val percentSum = ingredients.sumOf { it.percent.toDouble() }
+        val percentSum = ingredients.sumOf { it.percent }
 
         val ingredientDisplayList = ingredients.map {
-            Pair(it.name, ((it.percent / percentSum) * totalRecipeWeight).toFloat())
+            Pair(it.name, ((it.percent / percentSum) * totalRecipeWeight.toPercentage()))
         }
 
         _recipeDetailState.value = _recipeDetailState.value.copy(
@@ -118,7 +125,7 @@ class DetailViewModel @Inject constructor(
     {
         _recipeDetailState.value = _recipeDetailState.value.copy(
             ingredientDisplayList = ingredients.map {
-                    ingredient -> Pair(ingredient.name, ingredient.percent)
+                    ingredient -> Pair(ingredient.name, ingredient.percent) // TODO: Don't repeat code
             },
             totalRecipeWeight = null
         )
@@ -126,3 +133,4 @@ class DetailViewModel @Inject constructor(
     private fun getRecipeWithIngredientsById(recipeId: Int): Flow<RecipeWithIngredients?> =
         db.recipeDao().getRecipeWithIngredientsById(recipeId)
 }
+

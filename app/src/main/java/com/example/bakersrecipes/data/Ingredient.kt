@@ -11,6 +11,7 @@ import androidx.room.OnConflictStrategy
 import androidx.room.PrimaryKey
 import androidx.room.Query
 import androidx.room.Upsert
+import com.example.bakersrecipes.data.datatypes.Percentage
 import kotlinx.coroutines.flow.Flow
 
 @Entity(
@@ -29,7 +30,7 @@ data class Ingredient(
     @ColumnInfo(index = true)
     val recipeId:Int,
     val name:String,
-    val percent:Float,
+    val percent: Percentage,
 )
 
 @Dao

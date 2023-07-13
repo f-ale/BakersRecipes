@@ -19,25 +19,31 @@ class StepRepository @Inject constructor(
 private val stepStates: MutableMap<Int, MutableMap<Int, MutableStateFlow<StepState>>> = mutableMapOf()
     // TODO: getStepStates(recipeId)
     fun initializeStepStates(steps: List<Step>): Map<Int, StateFlow<StepState>> {
-        val recipeId = steps.first().recipeId
-        if(!stepStates.containsKey(recipeId))
+        if(steps.isNotEmpty())
         {
-            stepStates[recipeId] = mutableMapOf()
-        }
-
-        steps.forEach { step ->
-            step.id?.let {
-                stepStates[step.recipeId]?.set(step.id, MutableStateFlow(
-                    StepState(
-                        stepId = step.id,
-                        description = step.description,
-                        duration = step.duration
-                    )
-                ))
+            val recipeId = steps.first().recipeId
+            if(!stepStates.containsKey(recipeId))
+            {
+                stepStates[recipeId] = mutableMapOf()
             }
-        }
 
-        return stepStates[recipeId]?.toImmutableMap() ?: mapOf()
+            steps.forEach { step ->
+                step.id?.let {
+                    stepStates[step.recipeId]?.set(step.id, MutableStateFlow(
+                        StepState(
+                            stepId = step.id,
+                            description = step.description,
+                            duration = step.duration
+                        )
+                    ))
+                }
+            }
+
+            return stepStates[recipeId]?.toImmutableMap() ?: mapOf()
+        }
+        else {
+            return mapOf()
+        }
     }
 
     fun setAlarm(recipeId:Int, stepId:Int) {
@@ -65,12 +71,6 @@ private val stepStates: MutableMap<Int, MutableMap<Int, MutableStateFlow<StepSta
                                 state = AlarmStates.RINGING
                             )
                         )
-
-                        alarmUtil.notify(
-                            recipeId,
-                            stepId,
-                            stepState.value.description
-                        )
                     }
                 }
 
@@ -87,7 +87,7 @@ private val stepStates: MutableMap<Int, MutableMap<Int, MutableStateFlow<StepSta
         }
     }
 
-    fun cancelAlarm(recipeId:Int, stepId:Int) {
+    fun cancelAlarm(recipeId:Int, stepId:Int, isAlarmRinging:Boolean = false) {
         stepStates[recipeId]?.let { stepStates ->
             stepStates[stepId]?.let { stepState ->
                 stepState.value =
@@ -98,7 +98,11 @@ private val stepStates: MutableMap<Int, MutableMap<Int, MutableStateFlow<StepSta
                     )
 
                 stepState.value.alarmState.timer?.cancel()
-                alarmUtil.cancelAlarm(recipeId, stepId)
+
+                if(!isAlarmRinging)
+                {
+                    alarmUtil.cancelAlarm(recipeId, stepId)
+                }
             }
         }
     }

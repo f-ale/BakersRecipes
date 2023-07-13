@@ -9,17 +9,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.bakersrecipes.R
-import kotlin.math.roundToInt
+import com.example.bakersrecipes.data.datatypes.Percentage
+import com.example.bakersrecipes.data.datatypes.toPercentage
 
 @Composable
 fun RecipeIngredient(
     name:String,
-    number:Float,
+    number: Percentage,
     showWeight:Boolean,
     weightUnit:String,
     modifier: Modifier = Modifier)
 {
-    var numberString = number.roundToInt().toString()
+    var numberString = if(showWeight) number.toUnformattedString() else number.toString()
 
     numberString += if(showWeight)
         weightUnit
@@ -42,5 +43,5 @@ fun RecipeIngredient(
 @Composable
 fun RecipeIngredientPreview()
 {
-    RecipeIngredient("test", 1f, false, "g")
+    RecipeIngredient("test", 1.toPercentage(), false, "g")
 }

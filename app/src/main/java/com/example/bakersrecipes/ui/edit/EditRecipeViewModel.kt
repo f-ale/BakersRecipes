@@ -12,6 +12,8 @@ import com.example.bakersrecipes.data.Ingredient
 import com.example.bakersrecipes.data.Recipe
 import com.example.bakersrecipes.data.RecipeDatabase
 import com.example.bakersrecipes.data.Step
+import com.example.bakersrecipes.data.datatypes.Percentage
+import com.example.bakersrecipes.data.datatypes.toPercentage
 import com.example.bakersrecipes.data.relations.RecipeWithIngredients
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
@@ -56,7 +58,7 @@ class EditRecipeViewModel @Inject constructor(
                                 description = it.recipe.description,
                                 image = it.recipe.image,
                                 ingredients = ingredientsToIngredientField(it.ingredients)
-                                    .sortedByDescending { it.percent },
+                                    .sortedByDescending { it.percent?.toBigDecimal() },
                                 steps = stepsToStepField(it.steps)                            )
                     }
                 }
@@ -107,37 +109,44 @@ class EditRecipeViewModel @Inject constructor(
                         // TODO: this will be useless when we replace room upsert with something better
                     }
 
+                    val ingredientDao = db.ingredientDao()
+
+                    val ingredientsToRemove = editRecipeState.value
+                        .removedIngredients.map{ it.ingredientId ?: -1 }
+
+                    ingredientDao.deleteIngredientsById(*ingredientsToRemove.toIntArray())
+
                     if(editRecipeState.value.ingredients.isNotEmpty())
                     {
-                        val ingredientDao = db.ingredientDao()
-                        val ingredientsToRemove = editRecipeState.value
-                            .removedIngredients.map{ it.ingredientId ?: -1 }
+                        val maxPercentage = editRecipeState.value.ingredients.maxOf {
+                            it.percent?.toPercentage(true) ?: "0".toPercentage(true)
+                        }
 
-                        ingredientDao.deleteIngredientsById(*ingredientsToRemove.toIntArray())
-
-                        val maxPercent = editRecipeState.value.ingredients
-                            .maxOf{ it.percent?.toFloat() ?: 0f }
-
-                        val ingredientsToUpdate = editRecipeState.value.ingredients.map {
-                                field ->
+                        val ingredientsToUpdate = editRecipeState.value.ingredients.map { field ->
                             Ingredient(
                                 id = field.ingredientId,
                                 recipeId = recipeId,
                                 name = field.name ?: "Untitled",
-                                percent = field.percent?.toFloatOrNull()?.div(maxPercent) ?: 0f,
+                                percent =
+                                field.percent
+                                    ?.toPercentage(isPercentageString = true)
+                                    ?.div(maxPercentage)
+                                    ?: Percentage("-1"),
                             )
                         }
 
                         ingredientDao.insertOrUpdateIngredients(*ingredientsToUpdate.toTypedArray())
                     }
 
+                    val stepDao = db.stepDao()
+                    val stepsToRemove = editRecipeState.value
+                        .removedSteps.map{ it.stepId ?: -1 }
+
+                    stepDao.deleteStepsById(*stepsToRemove.toIntArray())
+
                     if(editRecipeState.value.steps.isNotEmpty())
                     {
-                        val stepDao = db.stepDao()
-                        val stepsToRemove = editRecipeState.value
-                            .removedSteps.map{ it.stepId ?: -1 }
 
-                        stepDao.deleteStepsById(*stepsToRemove.toIntArray())
 
                         val stepsToUpdate = editRecipeState.value.steps.map {
                                 field ->
@@ -147,6 +156,7 @@ class EditRecipeViewModel @Inject constructor(
                                 description = field.description ?: "Untitled",
                                 duration = field.duration?.toFloatOrNull() ?: 0f,
                             )
+
                         }
 
                        stepDao.insertOrUpdateSteps(*stepsToUpdate.toTypedArray())
@@ -179,7 +189,7 @@ class EditRecipeViewModel @Inject constructor(
     }
     fun updateIngredient(index: Int, new:EditRecipeIngredientField)
     {
-        if(isStringAValidFloatOrEmptyOrNull(new.percent))
+        if(isStringAValidBigDecimalOrEmptyOrNull(new.percent))
         {
             val mutableIngredientList = _editRecipeState.value.ingredients.toMutableList()
 
@@ -192,7 +202,7 @@ class EditRecipeViewModel @Inject constructor(
     }
     fun updateStep(index: Int, new:EditRecipeStepField)
     {
-        if(isStringAValidFloatOrEmptyOrNull(new.duration))
+        if(isStringAValidBigDecimalOrEmptyOrNull(new.duration))
         {
             val mutableStepList = _editRecipeState.value.steps.toMutableList()
 
@@ -203,13 +213,13 @@ class EditRecipeViewModel @Inject constructor(
             )
         }
     }
-    private fun isStringAValidFloatOrEmptyOrNull(number: String?): Boolean
+    private fun isStringAValidBigDecimalOrEmptyOrNull(number: String?): Boolean
     {
         if(number == null || number == "")
             return true
 
         return try {
-            number.toFloat().toString()
+            number.toBigDecimal().toString()
             true
         } catch (e: NumberFormatException) {
             false
@@ -246,7 +256,8 @@ class EditRecipeViewModel @Inject constructor(
 
         _editRecipeState.value = _editRecipeState.value.copy(
             steps = mutableStepList,
-            removedSteps = mutableRemovedStepList // TODO: Use a single list for both, with a "deleted" flag on the data, and then filter the data according to its use?
+            removedSteps = mutableRemovedStepList
+            // TODO: Use a single list for both, with a "deleted" flag on the data, and then filter the data according to its use?
         )
     }
     private fun ingredientsToIngredientField(ingredients: List<Ingredient>): List<EditRecipeIngredientField>
@@ -255,7 +266,7 @@ class EditRecipeViewModel @Inject constructor(
             ingredient ->
             EditRecipeIngredientField(
                 name = ingredient.name,
-                percent = ingredient.percent.times(100).toString(),
+                percent = ingredient.percent.toString(),
                 ingredientId = ingredient.id,
             )
         }
@@ -263,6 +274,7 @@ class EditRecipeViewModel @Inject constructor(
     private fun stepsToStepField(steps: List<Step>): List<EditRecipeStepField>
     {
         return steps.sortedBy{it.id}.map {
+
                 step ->
             EditRecipeStepField(
                 description = step.description,
