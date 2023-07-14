@@ -16,8 +16,7 @@ data class Alarm(
     val stepId: Int,
     @ColumnInfo(index = true)
     val recipeId: Int,
-    val state: AlarmStates = AlarmStates.INACTIVE,
-    val scheduledTime: Long = 0
+    val scheduledTime: Long = -1
 )
 
 @Dao
@@ -28,8 +27,8 @@ interface AlarmDao {
     @Query("SELECT * FROM Alarm WHERE stepId = :stepId AND recipeId = :recipeId")
     suspend fun getAlarm(stepId: Int, recipeId: Int): Alarm?
 
-    @Query("SELECT * FROM Alarm WHERE state = :state")
-    suspend fun getAlarmsWithState(state: AlarmStates): List<Alarm>
+    @Query("SELECT * FROM Alarm")
+    suspend fun getAllAlarms(): List<Alarm>
 
     @Query("DELETE FROM Alarm WHERE stepId = :stepId AND recipeId = :recipeId")
     suspend fun delete(stepId: Int, recipeId: Int)

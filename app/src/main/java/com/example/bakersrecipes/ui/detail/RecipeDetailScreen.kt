@@ -58,6 +58,7 @@ import coil.compose.AsyncImage
 import com.example.bakersrecipes.R
 import com.example.bakersrecipes.data.AlarmStates
 import com.example.bakersrecipes.data.StepState
+import com.example.bakersrecipes.data.alarmState
 import com.example.bakersrecipes.ui.common.BackButton
 import com.example.bakersrecipes.ui.theme.Typography
 import kotlinx.coroutines.delay
@@ -252,11 +253,12 @@ fun StepItem(
     val stepState = step.collectAsStateWithLifecycle()
 
     // TODO: Refactor in a separate composable
-    var remainingTime by remember(stepState.value.alarmState.scheduledTime) {
+    var remainingTime by remember(stepState.value.scheduledTime) {
+        val scheduledTime = stepState.value.scheduledTime ?: 0L
         mutableLongStateOf(
-            if(stepState.value.alarmState.scheduledTime - System.currentTimeMillis() > 0)
+            if(scheduledTime - System.currentTimeMillis() > 0)
             {
-                stepState.value.alarmState.scheduledTime - System.currentTimeMillis()
+                scheduledTime - System.currentTimeMillis()
             } else {
                 0L
             }
@@ -264,18 +266,19 @@ fun StepItem(
     }
 
     LaunchedEffect(remainingTime) {
-        val diff = remainingTime - (stepState.value.alarmState.scheduledTime - System.currentTimeMillis())
+        val scheduledTime = stepState.value.scheduledTime ?: 0L
+        val diff = remainingTime - (scheduledTime - System.currentTimeMillis())
         delay(1_000L - diff)
         remainingTime = if(remainingTime > 0L) {
-            stepState.value.alarmState.scheduledTime - System.currentTimeMillis()
+           scheduledTime - System.currentTimeMillis()
         } else {
             0L
         }
     }
 
     val cardColors =
-        if(stepState.value.alarmState.state == AlarmStates.RINGING ||
-            (stepState.value.alarmState.state == AlarmStates.SCHEDULED
+        if(stepState.value.alarmState == AlarmStates.RINGING ||
+            (stepState.value.alarmState == AlarmStates.SCHEDULED
             && remainingTime == 0L)
         )
             CardDefaults.cardColors(containerColor = Color.Red) // TODO: Change color
@@ -311,26 +314,28 @@ fun StepItem(
                             .weight(4f)
                     )
                     Text(
-                        if(stepState.value.alarmState.state == AlarmStates.SCHEDULED) {
+                        if(stepState.value.alarmState == AlarmStates.SCHEDULED) {
                             remainingTime
                                 .toTimeDurationString()
                         }
-                        else
+                        else if(stepState.value.alarmState == AlarmStates.RINGING)
                         {
+                            "Ringing"
+                        } else {
                             stepState.value.duration.roundToInt().toString()+" min"
                         },
                         textAlign = TextAlign.Center
                     )
                 }
-                if(stepState.value.alarmState.state == AlarmStates.SCHEDULED
-                    || stepState.value.alarmState.state == AlarmStates.RINGING)
+                if(stepState.value.alarmState == AlarmStates.SCHEDULED
+                    || stepState.value.alarmState == AlarmStates.RINGING)
                 {
                     IconButton(
                         onClick = { onAlarmCanceled(stepState.value.stepId) }
                     ) {
                         Icon(Icons.Default.Close, "Cancel Alarm")
                     }
-                } else if(stepState.value.alarmState.state == AlarmStates.INACTIVE) {
+                } else if(stepState.value.alarmState == AlarmStates.INACTIVE) {
                     IconButton(
                         onClick = { onAlarmSet(stepState.value.stepId) }
                     ) {

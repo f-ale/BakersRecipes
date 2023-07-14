@@ -1,11 +1,10 @@
 package com.example.bakersrecipes.repositories
 
 import com.example.bakersrecipes.data.Alarm
-import com.example.bakersrecipes.data.AlarmState
-import com.example.bakersrecipes.data.AlarmStates
 import com.example.bakersrecipes.data.RecipeDatabase
 import com.example.bakersrecipes.data.Step
 import com.example.bakersrecipes.data.StepState
+import com.example.bakersrecipes.data.fromDuration
 import com.example.bakersrecipes.utils.AlarmUtil
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -32,23 +31,20 @@ private val stepStates: MutableMap<Int, MutableMap<Int, MutableStateFlow<StepSta
     }
     suspend fun importSavedAlarms() {
         val alarms =
-            alarmDao.getAlarmsWithState(AlarmStates.SCHEDULED) +
-                    alarmDao.getAlarmsWithState(AlarmStates.RINGING)
+            alarmDao.getAllAlarms()
 
-        val recipeIds = alarms.map { it.recipeId }.distinct()
+        alarms.groupBy { it.recipeId }.forEach { (recipeId, alarmsForRecipe) ->
+            val steps = recipeDatabase.stepDao().getStepsForRecipeAsList(recipeId)
+            initializeStepStates(steps)
 
-        recipeIds.forEach {
-                recipeId -> recipeDatabase.stepDao().getStepsForRecipe(recipeId).collect {
-                steps -> initializeStepStates(steps)
+            for (alarm in alarmsForRecipe) {
+                // Restart the alarm
+                resumeAlarm(
+                    recipeId = alarm.recipeId,
+                    stepId = alarm.stepId,
+                    scheduledTime = alarm.scheduledTime
+                )
             }
-        }
-
-        for (alarm in alarms) {
-            val recipeId = alarm.recipeId
-            val stepId = alarm.stepId
-
-            // Restart the alarm
-            setAlarm(recipeId, stepId)
         }
     }
     suspend fun initializeStepStates(steps: List<Step>): Map<Int, StateFlow<StepState>> {
@@ -64,15 +60,10 @@ private val stepStates: MutableMap<Int, MutableMap<Int, MutableStateFlow<StepSta
                 step.id?.let { id ->
                     val alarm = recipeDatabase.alarmDao().getAlarm(id, recipeId) // get Alarm from the database
 
-                    var alarmState = AlarmState.fromDuration(
-                        step.duration,
-                        AlarmStates.INACTIVE
-                    )
+                    var scheduledTime: Long? = null
+
                     if (alarm != null) {
-                        alarmState = AlarmState(
-                            scheduledTime = alarm.scheduledTime,
-                            state = alarm.state
-                        )
+                        scheduledTime = alarm.scheduledTime
                     }
 
                     stepStates[recipeId]?.set(id, MutableStateFlow(
@@ -80,7 +71,7 @@ private val stepStates: MutableMap<Int, MutableMap<Int, MutableStateFlow<StepSta
                             stepId = id,
                             description = step.description,
                             duration = step.duration,
-                            alarmState = alarmState
+                            scheduledTime = scheduledTime
                         )
                     ))
                 }
@@ -93,28 +84,38 @@ private val stepStates: MutableMap<Int, MutableMap<Int, MutableStateFlow<StepSta
         }
     }
 
-    suspend fun setAlarm(recipeId:Int, stepId:Int) {
+    private fun resumeAlarm(recipeId: Int, stepId: Int, scheduledTime: Long) {
         stepStates[recipeId]?.let { stepStates ->
             stepStates[stepId]?.let { stepState ->
                 stepState.value =
                     stepState.value.copy(
-                        alarmState = AlarmState.fromDuration(
-                            stepState.value.duration,
-                            AlarmStates.SCHEDULED
+                        scheduledTime = scheduledTime
+                    )
+
+                stepState.value.scheduledTime?.let { scheduledTime ->
+                    alarmUtil.setAlarm(recipeId, stepId, scheduledTime)
+                }
+            }
+        }
+    }
+    suspend fun setAlarm(recipeId:Int, stepId:Int) {
+        stepStates[recipeId]?.let { stepStates ->
+            stepStates[stepId]?.let { stepState ->
+                stepState.value =
+                    stepState.value.fromDuration(stepState.value.duration)
+
+                stepState.value.scheduledTime?.let { scheduledTime ->
+                    // save alarm to db
+                    recipeDatabase.alarmDao().insertOrUpdate(
+                        Alarm(
+                            stepId = stepId,
+                            recipeId = recipeId,
+                            scheduledTime = scheduledTime
                         )
                     )
 
-                // save alarm to db
-                recipeDatabase.alarmDao().insertOrUpdate(
-                    Alarm(
-                        stepId = stepId,
-                        recipeId = recipeId,
-                        state = AlarmStates.SCHEDULED,
-                        scheduledTime = stepState.value.alarmState.scheduledTime
-                    )
-                )
-
-                alarmUtil.setAlarm(recipeId, stepId, stepState.value.alarmState.scheduledTime)
+                    alarmUtil.setAlarm(recipeId, stepId, scheduledTime)
+                }
             }
         }
     }
@@ -124,9 +125,7 @@ private val stepStates: MutableMap<Int, MutableMap<Int, MutableStateFlow<StepSta
             stepStates[stepId]?.let { stepState ->
                 stepState.value =
                     stepState.value.copy(
-                        alarmState = stepState.value.alarmState.copy(
-                            state = AlarmStates.INACTIVE,
-                        )
+                        scheduledTime = null
                     )
 
                 if(!isAlarmRinging)

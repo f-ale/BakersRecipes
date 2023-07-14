@@ -50,4 +50,6 @@ interface StepDao {
     fun getAllSteps(): List<Step>
     @Query("SELECT * FROM steps WHERE recipeId = :recipeId ORDER BY id ASC")
     fun getStepsForRecipe(recipeId: Int): Flow<List<Step>>
+    @Query("SELECT * FROM steps WHERE recipeId = :recipeId ORDER BY id ASC")
+    fun getStepsForRecipeAsList(recipeId: Int): List<Step>
 }
