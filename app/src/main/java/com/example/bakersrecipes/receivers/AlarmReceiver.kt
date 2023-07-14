@@ -28,7 +28,6 @@ class AlarmReceiver: BroadcastReceiver() {
 
         if(intent.action == "Stop" || intent.action == "DISMISS_ALARM") {
             context.startService(alarmServiceIntent)
-            stepRepository.cancelAlarm(recipeId, alarmId, true)
         } else {
             ContextCompat.startForegroundService(context, alarmServiceIntent)
         }

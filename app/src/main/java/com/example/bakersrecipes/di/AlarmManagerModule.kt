@@ -4,6 +4,7 @@ import android.app.AlarmManager
 import android.content.Context
 import androidx.core.app.NotificationManagerCompat
 import androidx.work.WorkManager
+import com.example.bakersrecipes.data.RecipeDatabase
 import com.example.bakersrecipes.repositories.StepRepository
 import com.example.bakersrecipes.utils.AlarmUtil
 import dagger.Module
@@ -24,9 +25,10 @@ class AlarmManagerModule {
     @Provides
     @Singleton
     fun provideStepRepository(
-        alarmUtil: AlarmUtil
+        alarmUtil: AlarmUtil,
+        recipeDatabase: RecipeDatabase
     ): StepRepository {
-        return StepRepository(alarmUtil)
+        return StepRepository(alarmUtil, recipeDatabase)
     }
 
     @Provides
@@ -40,7 +42,6 @@ class AlarmManagerModule {
     @Singleton
     fun provideAlarmUtils(
         @ApplicationContext appContext: Context,
-        notificationManager: NotificationManagerCompat,
         alarmManager: AlarmManager,
     ): AlarmUtil {
         return AlarmUtil(

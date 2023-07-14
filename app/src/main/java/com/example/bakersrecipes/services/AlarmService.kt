@@ -14,12 +14,19 @@ import com.example.bakersrecipes.receivers.AlarmReceiver
 import com.example.bakersrecipes.repositories.StepRepository
 import com.example.bakersrecipes.utils.AlarmUtil.Companion.CHANNEL_ID
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @AndroidEntryPoint
 class AlarmService: Service() {
     @Inject lateinit var stepRepository: StepRepository
     private val mediaPlayers: MutableMap<Pair<Int, Int>, MediaPlayer> = mutableMapOf()
+
+    private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     @SuppressLint("MissingPermission")
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -62,11 +69,13 @@ class AlarmService: Service() {
         if (intent?.action == "Stop" || intent?.action == "DISMISS_ALARM") {
             mediaPlayers.forEach { (index, _) ->
                 Log.d("BA-ALARM", index.toString())
-                stepRepository.cancelAlarm(
-                    stepId = index.first,
-                    recipeId = index.second,
-                    isAlarmRinging = true
-                )
+                serviceScope.launch {
+                    stepRepository.cancelAlarm(
+                        stepId = index.first,
+                        recipeId = index.second,
+                        isAlarmRinging = true
+                    )
+                }
             }
             mediaPlayers.stopAllAndClear()
         }
@@ -93,6 +102,7 @@ class AlarmService: Service() {
 
     override fun onDestroy() {
         super.onDestroy()
+        serviceScope.cancel()
         mediaPlayers.stopAll()
         mediaPlayers.clear()
     }

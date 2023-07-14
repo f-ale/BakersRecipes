@@ -1,6 +1,7 @@
 package com.example.bakersrecipes.data
 
 import android.os.CountDownTimer
+
 data class AlarmState(
     val remainingTime: Long,
     val state: AlarmStates,

@@ -8,12 +8,14 @@ import androidx.room.TypeConverters
 import com.example.bakersrecipes.data.datatypes.Percentage
 import java.math.BigDecimal
 
-@Database(entities = [Recipe::class, Ingredient::class, Step::class], version = 7)
+@Database(entities = [Recipe::class, Ingredient::class, Step::class, Alarm::class], version = 8)
 @TypeConverters(Converters::class)
 abstract class RecipeDatabase: RoomDatabase() {
     abstract fun recipeDao(): RecipeDao
     abstract fun ingredientDao(): IngredientDao
     abstract fun stepDao(): StepDao
+
+    abstract fun alarmDao(): AlarmDao
 }
 
 class Converters {

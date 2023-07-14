@@ -59,10 +59,14 @@ class DetailViewModel @Inject constructor(
         }
     }
     fun setAlarm(stepId: Int) {
-        stepRepository.setAlarm(recipeId, stepId)
+        viewModelScope.launch {
+            stepRepository.setAlarm(recipeId, stepId)
+        }
     }
     fun cancelAlarm(stepId: Int) {
-        stepRepository.cancelAlarm(recipeId, stepId)
+        viewModelScope.launch {
+            stepRepository.cancelAlarm(recipeId, stepId)
+        }
     }
     fun getShareIntent():Intent {
         val recipeName = recipeDetailState.value.recipe?.name ?: ""
