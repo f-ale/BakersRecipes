@@ -1,6 +1,5 @@
 package com.example.bakersrecipes.repositories
 
-import android.os.CountDownTimer
 import com.example.bakersrecipes.data.Alarm
 import com.example.bakersrecipes.data.AlarmState
 import com.example.bakersrecipes.data.AlarmStates
@@ -16,7 +15,6 @@ import kotlinx.coroutines.launch
 import okhttp3.internal.toImmutableMap
 import javax.inject.Inject
 import javax.inject.Singleton
-import kotlin.math.roundToInt
 
 @Singleton
 class StepRepository @Inject constructor(
@@ -66,17 +64,15 @@ private val stepStates: MutableMap<Int, MutableMap<Int, MutableStateFlow<StepSta
                 step.id?.let { id ->
                     val alarm = recipeDatabase.alarmDao().getAlarm(id, recipeId) // get Alarm from the database
 
-                    var alarmState = AlarmState(step.duration.toLong(), AlarmStates.INACTIVE)
+                    var alarmState = AlarmState.fromDuration(
+                        step.duration,
+                        AlarmStates.INACTIVE
+                    )
                     if (alarm != null) {
-                        // calculate the remaining time based on the saved scheduledTime
-                        val remainingTime = alarm.scheduledTime - System.currentTimeMillis()
-
-                        if(remainingTime > 0L) {
-                            alarmState = AlarmState(
-                                remainingTime = remainingTime,
-                                state = alarm.state
-                            )
-                        }
+                        alarmState = AlarmState(
+                            scheduledTime = alarm.scheduledTime,
+                            state = alarm.state
+                        )
                     }
 
                     stepStates[recipeId]?.set(id, MutableStateFlow(
@@ -102,36 +98,11 @@ private val stepStates: MutableMap<Int, MutableMap<Int, MutableStateFlow<StepSta
             stepStates[stepId]?.let { stepState ->
                 stepState.value =
                     stepState.value.copy(
-                        alarmState = stepState.value.alarmState.copy(
-                            state = AlarmStates.SCHEDULED
+                        alarmState = AlarmState.fromDuration(
+                            stepState.value.duration,
+                            AlarmStates.SCHEDULED
                         )
                     )
-
-                val timer = object : CountDownTimer(stepState.value.duration.toLong() * 60 * 1000, 1000) {
-                    override fun onTick(millisUntilFinished: Long) {
-                        stepState.value = stepState.value.copy(
-                            alarmState = stepState.value.alarmState.copy(
-                                remainingTime = millisUntilFinished
-                            )
-                        )
-                    }
-
-                    override fun onFinish() {
-                        stepState.value = stepState.value.copy(
-                            alarmState = stepState.value.alarmState.copy(
-                                state = AlarmStates.RINGING
-                            )
-                        )
-                    }
-                }
-
-                stepState.value = stepState.value.copy(
-                    alarmState = stepState.value.alarmState.copy(
-                        timer = timer
-                    )
-                )
-
-                timer.start()
 
                 // save alarm to db
                 recipeDatabase.alarmDao().insertOrUpdate(
@@ -139,11 +110,11 @@ private val stepStates: MutableMap<Int, MutableMap<Int, MutableStateFlow<StepSta
                         stepId = stepId,
                         recipeId = recipeId,
                         state = AlarmStates.SCHEDULED,
-                        scheduledTime = System.currentTimeMillis() + stepState.value.duration.toLong() * 60 * 1000
+                        scheduledTime = stepState.value.alarmState.scheduledTime
                     )
                 )
 
-                alarmUtil.setAlarm(recipeId, stepId, stepState.value.duration.roundToInt())
+                alarmUtil.setAlarm(recipeId, stepId, stepState.value.alarmState.scheduledTime)
             }
         }
     }
@@ -154,11 +125,9 @@ private val stepStates: MutableMap<Int, MutableMap<Int, MutableStateFlow<StepSta
                 stepState.value =
                     stepState.value.copy(
                         alarmState = stepState.value.alarmState.copy(
-                            state = AlarmStates.INACTIVE
+                            state = AlarmStates.INACTIVE,
                         )
                     )
-
-                stepState.value.alarmState.timer?.cancel()
 
                 if(!isAlarmRinging)
                 {

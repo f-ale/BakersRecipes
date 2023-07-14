@@ -33,7 +33,11 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -56,6 +60,7 @@ import com.example.bakersrecipes.data.AlarmStates
 import com.example.bakersrecipes.data.StepState
 import com.example.bakersrecipes.ui.common.BackButton
 import com.example.bakersrecipes.ui.theme.Typography
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.StateFlow
 import kotlin.math.roundToInt
 
@@ -246,8 +251,33 @@ fun StepItem(
 ) {
     val stepState = step.collectAsStateWithLifecycle()
 
+    // TODO: Refactor in a separate composable
+    var remainingTime by remember(stepState.value.alarmState.scheduledTime) {
+        mutableLongStateOf(
+            if(stepState.value.alarmState.scheduledTime - System.currentTimeMillis() > 0)
+            {
+                stepState.value.alarmState.scheduledTime - System.currentTimeMillis()
+            } else {
+                0L
+            }
+        )
+    }
+
+    LaunchedEffect(remainingTime) {
+        val diff = remainingTime - (stepState.value.alarmState.scheduledTime - System.currentTimeMillis())
+        delay(1_000L - diff)
+        remainingTime = if(remainingTime > 0L) {
+            stepState.value.alarmState.scheduledTime - System.currentTimeMillis()
+        } else {
+            0L
+        }
+    }
+
     val cardColors =
-        if(stepState.value.alarmState.state == AlarmStates.RINGING)
+        if(stepState.value.alarmState.state == AlarmStates.RINGING ||
+            (stepState.value.alarmState.state == AlarmStates.SCHEDULED
+            && remainingTime == 0L)
+        )
             CardDefaults.cardColors(containerColor = Color.Red) // TODO: Change color
         else {
             CardDefaults.cardColors()
@@ -280,10 +310,10 @@ fun StepItem(
                             .padding(4.dp)
                             .weight(4f)
                     )
-
                     Text(
                         if(stepState.value.alarmState.state == AlarmStates.SCHEDULED) {
-                            stepState.value.alarmState.remainingTime.toTimeDurationString()
+                            remainingTime
+                                .toTimeDurationString()
                         }
                         else
                         {

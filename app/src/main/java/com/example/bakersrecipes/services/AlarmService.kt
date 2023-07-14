@@ -7,7 +7,6 @@ import android.content.Intent
 import android.media.MediaPlayer
 import android.media.RingtoneManager
 import android.os.IBinder
-import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.example.bakersrecipes.R
 import com.example.bakersrecipes.receivers.AlarmReceiver
@@ -68,7 +67,6 @@ class AlarmService: Service() {
         // TODO: Show only one notification and dismiss all ringing alarms with the press of one button
         if (intent?.action == "Stop" || intent?.action == "DISMISS_ALARM") {
             mediaPlayers.forEach { (index, _) ->
-                Log.d("BA-ALARM", index.toString())
                 serviceScope.launch {
                     stepRepository.cancelAlarm(
                         stepId = index.first,

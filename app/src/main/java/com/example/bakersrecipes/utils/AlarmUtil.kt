@@ -31,7 +31,7 @@ class AlarmUtil @Inject constructor(
         }
     }
 
-    fun setAlarm(recipeId:Int, alarmId: Int, minutes: Int) {
+    fun setAlarm(recipeId:Int, alarmId: Int, scheduledTime: Long) {
         val hashCode = ("$recipeId-$alarmId").hashCode()
 
         val intent = Intent(context, AlarmReceiver::class.java).apply {
@@ -42,7 +42,7 @@ class AlarmUtil @Inject constructor(
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             alarmManager.setExactAndAllowWhileIdle(
                 AlarmManager.RTC_WAKEUP,
-                System.currentTimeMillis() + (minutes * 60 * 1000),
+                scheduledTime,
                 PendingIntent.getBroadcast(
                     context,
                     hashCode,
@@ -53,7 +53,7 @@ class AlarmUtil @Inject constructor(
         } else {
             alarmManager.setExact(
                 AlarmManager.RTC_WAKEUP,
-                System.currentTimeMillis() + (minutes * 60 * 1000),
+                scheduledTime,
                 PendingIntent.getBroadcast(
                     context,
                     hashCode,

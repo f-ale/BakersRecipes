@@ -49,7 +49,8 @@ class DetailViewModel @Inject constructor(
                         ingredientDisplayList = recipe.ingredients.map {
                                 ingredient -> Pair(ingredient.name, ingredient.percent)
                         }.sortedByDescending { it.second },
-                        stepDisplayList = stepRepository.initializeStepStates(recipe.steps).values.toList()
+                        stepDisplayList = stepRepository
+                            .initializeStepStates(recipe.steps).values.toList()
                     )
                     // We want ingredients to be sorted by highest percentage
                     ingredients = recipe.ingredients.sortedByDescending { it.percent }
@@ -85,7 +86,6 @@ class DetailViewModel @Inject constructor(
             )
             type = "text/plain"
         }
-
         return  Intent.createChooser(
             sendIntent,
             recipeName
