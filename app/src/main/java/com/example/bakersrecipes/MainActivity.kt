@@ -29,11 +29,9 @@ import com.example.bakersrecipes.ui.theme.BakersRecipesTheme
 import dagger.hilt.android.AndroidEntryPoint
 
 /*
-TODO: Search bar
-TODO: Online functionality
-TODO: Multiline input
 TODO: Animations
 TODO: Pretty theme
+TODO: Focus and scroll
  */
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {

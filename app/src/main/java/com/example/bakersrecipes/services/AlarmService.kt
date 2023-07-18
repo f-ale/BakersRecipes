@@ -64,7 +64,6 @@ class AlarmService: Service() {
             .setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM))
             .build()
 
-        // TODO: Show only one notification and dismiss all ringing alarms with the press of one button
         if (intent?.action == "Stop" || intent?.action == "DISMISS_ALARM") {
             mediaPlayers.forEach { (index, _) ->
                 serviceScope.launch {

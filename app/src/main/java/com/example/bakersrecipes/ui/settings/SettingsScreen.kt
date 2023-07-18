@@ -12,6 +12,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -20,6 +21,7 @@ import androidx.datastore.preferences.core.Preferences
 import com.alorma.compose.settings.storage.datastore.rememberPreferenceDataStoreBooleanSettingState
 import com.alorma.compose.settings.ui.SettingsMenuLink
 import com.alorma.compose.settings.ui.SettingsSwitch
+import com.example.bakersrecipes.R
 import com.example.bakersrecipes.ui.common.BackButton
 import com.example.bakersrecipes.ui.theme.BakersRecipesTheme
 
@@ -55,7 +57,7 @@ fun SettingsScreen(
 
     Scaffold(topBar = {
         TopAppBar(
-            title = { Text("Settings")},
+            title = { Text( stringResource(R.string.settings))},
              navigationIcon = {
                 BackButton(onClick = onBackPressed)
             }
@@ -63,13 +65,13 @@ fun SettingsScreen(
     }) { paddingValues ->
         Column(Modifier.padding(paddingValues)) {
             SettingsMenuLink(
-                title = { Text("Weight Unit") },
-                subtitle = { Text("Select the default unit used for weight measurements.") },
+                title = { Text(stringResource(R.string.weight_unit)) },
+                subtitle = { Text(stringResource(R.string.setting_weight_unit_description)) },
                 action = {
                     Column {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
-                                "g",
+                                stringResource(R.string.gram_unit),
                                 modifier = Modifier.width(24.dp),
                                 textAlign = TextAlign.Center
                             )
@@ -80,7 +82,7 @@ fun SettingsScreen(
                         }
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
-                                "oz",
+                                stringResource(R.string.oz_unit),
                                 modifier = Modifier.width(24.dp),
                                 textAlign = TextAlign.Center
                             )
@@ -94,8 +96,8 @@ fun SettingsScreen(
 
             SettingsSwitch(
                 state = showWeightsInsteadOfPercentPreferenceState,
-                title = { Text("Show weights by default")},
-                subtitle = {Text("Show weights instead of percentages")}
+                title = { Text(stringResource(R.string.show_weights_by_default))},
+                subtitle = {Text(stringResource(R.string.show_weights_instead_of_percentages))}
             )
         }
     }

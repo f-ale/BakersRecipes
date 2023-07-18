@@ -1,14 +1,14 @@
 package com.example.bakersrecipes.data
 
-val StepState.alarmState: AlarmStates
+val StepState.alarmState: AlarmState
     get() =
         if(this.scheduledTime == null)
         {
-            AlarmStates.INACTIVE
+            AlarmState.INACTIVE
         } else if(this.scheduledTime > System.currentTimeMillis()) {
-            AlarmStates.SCHEDULED
+            AlarmState.SCHEDULED
         } else {
-            AlarmStates.RINGING
+            AlarmState.RINGING
         }
 
 fun StepState.fromDuration(duration: Float) : StepState =
@@ -20,7 +20,7 @@ data class StepState(
     val duration: Float,
     val scheduledTime: Long?
 )
-enum class AlarmStates { // TODO: AlarmStates can be eliminated and replaced with a nullable scheduledTime
+enum class AlarmState {
     INACTIVE,
     SCHEDULED,
     RINGING

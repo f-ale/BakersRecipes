@@ -4,6 +4,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -78,10 +79,14 @@ fun BakersRecipeHome(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Image(
                             painterResource(id = R.drawable.bakers_recipes_logo),
-                            "Baker's recipes",
-                            modifier = Modifier.size(46.dp)
-                                .background(color = Color(color = 0xffc40000),
-                                    shape = CircleShape).padding(8.dp)
+                            stringResource(R.string.app_name),
+                            modifier = Modifier
+                                .size(46.dp)
+                                .background(
+                                    color = Color(color = 0xffc40000),
+                                    shape = CircleShape
+                                )
+                                .padding(8.dp)
                         )
                     }
 
@@ -89,7 +94,7 @@ fun BakersRecipeHome(
                 scrollBehavior = scrollBehavior,
                 actions = {
                     IconButton(onSettingsButtonPressed) {
-                        Icon(Icons.Default.Settings, "Settings")
+                        Icon(Icons.Default.Settings, stringResource(R.string.settings))
                     }
                 }
             )
@@ -127,7 +132,7 @@ fun BakersRecipeHome(
                     } else {
                         item {
                             Text(
-                                text = "No recipes found",
+                                text = stringResource(R.string.no_recipes_found),
                                 modifier = Modifier.fillMaxWidth(),
                                 textAlign = TextAlign.Center
                             )
@@ -142,7 +147,14 @@ fun BakersRecipeHome(
                         .fillMaxHeight(),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("You haven't added any recipes yet")
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(
+                            painterResource(id = R.drawable.recipebook),
+                            null,
+                            modifier = Modifier.padding(vertical = 16.dp).size(64.dp)
+                        )
+                        Text(stringResource(R.string.no_recipes))
+                    }
                 }
             }
         }
@@ -170,16 +182,16 @@ fun HomeSearchBar(
         active = false,
         onActiveChange = {},
         leadingIcon = {
-            Icon(Icons.Default.Search, "Search")
+            Icon(Icons.Default.Search, stringResource(R.string.search))
         },
         trailingIcon = {
             if(!searchString.isNullOrEmpty()) {
                 IconButton(onClick = { updateSearchString(null) }) {
-                    Icon(Icons.Default.Clear, "Cancel search")
+                    Icon(Icons.Default.Clear, stringResource(R.string.cancel_search))
                 }
             }
         },
-        placeholder = { Text("Search") },
+        placeholder = {  stringResource(R.string.search) },
         modifier = modifier
     ) {}
 }

@@ -79,7 +79,6 @@ class DetailViewModel @Inject constructor(
                     val second:String =
                         if(recipeDetailState.value.totalRecipeWeight != null)
                         { it.second.toUnformattedString() + "g" } // TODO: Move these operations to an utility class.
-                        // TODO: Not just toString, you need to do something since it's a percentage
                         else { it.second.toString() + "%" }
                     it.first + " " + second + "\n"
                 }.reduce { acc, it -> acc + it }

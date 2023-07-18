@@ -40,7 +40,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -56,7 +55,7 @@ import androidx.core.content.ContextCompat.startActivity
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import com.example.bakersrecipes.R
-import com.example.bakersrecipes.data.AlarmStates
+import com.example.bakersrecipes.data.AlarmState
 import com.example.bakersrecipes.data.StepState
 import com.example.bakersrecipes.data.alarmState
 import com.example.bakersrecipes.ui.common.BackButton
@@ -77,7 +76,7 @@ fun RecipeDetailScreenPreview()
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RecipeDetailScreen( // TODO: Make scrollable
+fun RecipeDetailScreen(
     viewModel: DetailViewModel,
     onNavigateUp: () -> Unit,
     onEditRecipe: (Int) -> Unit
@@ -105,7 +104,7 @@ fun RecipeDetailScreen( // TODO: Make scrollable
                  }, actions = {
                          IconButton(
                              onClick = { onEditRecipe(viewModel.recipeId) },
-                             content = { Icon(Icons.Outlined.Edit, "Edit") }
+                             content = { Icon(Icons.Outlined.Edit, stringResource(R.string.edit)) }
                          )
                          IconButton(
                              onClick = {
@@ -115,7 +114,7 @@ fun RecipeDetailScreen( // TODO: Make scrollable
                                     null
                                 )
                              },
-                             content = { Icon(Icons.Outlined.Share, "Share") }
+                             content = { Icon(Icons.Outlined.Share, stringResource(R.string.share)) }
                          )
                      },
                      scrollBehavior = scrollBehavior
@@ -141,7 +140,7 @@ fun RecipeDetailScreen( // TODO: Make scrollable
                                     recipeDetailState.recipe?.image
                                         ?: R.drawable.ic_launcher_background,
                                     recipeDetailState.recipe?.name
-                                        ?: "Thumbnail",
+                                        ?: stringResource(R.string.thumbnail),
                                     Modifier
                                         .height(128.dp)
                                         .fillMaxWidth(),
@@ -230,7 +229,7 @@ fun LazyListScope.stepsList(
 {
     item {
         Text(
-            "Timers",
+            stringResource(R.string.timers),
             style = Typography.titleMedium,
             modifier = modifier
         )
@@ -277,11 +276,13 @@ fun StepItem(
     }
 
     val cardColors =
-        if(stepState.value.alarmState == AlarmStates.RINGING ||
-            (stepState.value.alarmState == AlarmStates.SCHEDULED
+        if(stepState.value.alarmState == AlarmState.RINGING ||
+            (stepState.value.alarmState == AlarmState.SCHEDULED
             && remainingTime == 0L)
         )
-            CardDefaults.cardColors(containerColor = Color.Red) // TODO: Change color
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.secondaryContainer
+            ) // TODO: Change color
         else {
             CardDefaults.cardColors()
         }
@@ -314,32 +315,32 @@ fun StepItem(
                             .weight(4f)
                     )
                     Text(
-                        if(stepState.value.alarmState == AlarmStates.SCHEDULED) {
+                        if(stepState.value.alarmState == AlarmState.SCHEDULED) {
                             remainingTime
                                 .toTimeDurationString()
                         }
-                        else if(stepState.value.alarmState == AlarmStates.RINGING)
+                        else if(stepState.value.alarmState == AlarmState.RINGING)
                         {
-                            "Ringing"
+                            stringResource(R.string.ringing)
                         } else {
-                            stepState.value.duration.roundToInt().toString()+" min"
+                            stepState.value.duration.roundToInt().toString()+" "+stringResource(R.string.min)
                         },
                         textAlign = TextAlign.Center
                     )
                 }
-                if(stepState.value.alarmState == AlarmStates.SCHEDULED
-                    || stepState.value.alarmState == AlarmStates.RINGING)
+                if(stepState.value.alarmState == AlarmState.SCHEDULED
+                    || stepState.value.alarmState == AlarmState.RINGING)
                 {
                     IconButton(
                         onClick = { onAlarmCanceled(stepState.value.stepId) }
                     ) {
-                        Icon(Icons.Default.Close, "Cancel Alarm")
+                        Icon(Icons.Default.Close, stringResource(R.string.cancel_alarm))
                     }
-                } else if(stepState.value.alarmState == AlarmStates.INACTIVE) {
+                } else if(stepState.value.alarmState == AlarmState.INACTIVE) {
                     IconButton(
                         onClick = { onAlarmSet(stepState.value.stepId) }
                     ) {
-                        Icon(Icons.Default.PlayArrow, "Set Alarm")
+                        Icon(Icons.Default.PlayArrow, stringResource(R.string.set_alarm))
                     }
                 }
 

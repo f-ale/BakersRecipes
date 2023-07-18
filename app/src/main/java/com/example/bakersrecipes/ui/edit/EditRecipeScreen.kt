@@ -99,7 +99,7 @@ fun EditRecipeScreen(
                         if (valid) onSaveEdits()
                         // TODO: Show warning if conditions to save not met
                     }) {
-                        Text("Save")
+                        Text(stringResource(R.string.save))
                     }
 
                     IconButton(onClick = {
@@ -156,16 +156,16 @@ fun EditRecipeScreen(
                         Spacer(Modifier.height(8.dp))
                         TextEditField(
                             editRecipeState.title ?: "",
-                            "Title",
+                            stringResource(R.string.title),
                             onValueChange = { viewModel.updateName(it) }
                         )
                         TextEditField(
                             editRecipeState.description ?: "",
-                            "Description",
+                            stringResource(R.string.description),
                             onValueChange = { viewModel.updateDescription(it) }
                         )
                         Text(
-                            "Ingredients",
+                            stringResource(R.string.ingredients),
                             style = MaterialTheme.typography.bodyLarge,
                             modifier = Modifier.padding(
                                 horizontal = 18.dp,
@@ -248,12 +248,12 @@ fun EditableIngredientList(
                 onClick = onAddIngredient,
                 modifier = Modifier.fillMaxWidth().padding(16.dp)
             ) {
-                Text("Add Ingredient")
+                Text(stringResource(R.string.add_ingredient))
             }
         }
         item {
             Text(
-                "Steps",
+                stringResource(R.string.timers),
                 style = MaterialTheme.typography.bodyLarge,
                 modifier = Modifier.padding(
                     horizontal = 18.dp,
@@ -293,7 +293,7 @@ fun EditableIngredientList(
                 onClick = onAddStep,
                 modifier = Modifier.fillMaxWidth().padding(16.dp)
             ) {
-                Text("Add Timed Step")
+                Text(stringResource(R.string.add_timer))
             }
         }
     }
@@ -311,8 +311,8 @@ fun IngredientEditField(
     showWeight: Boolean,
     weightUnit: String
 ) {
-    val trailingIconString = if(showWeight) weightUnit else "%"
-    val inputLabel = if(showWeight) "Weight" else "Percent" // TODO: Extract strings
+    val trailingIconString = if(showWeight) weightUnit else stringResource(R.string.percent_symbol)
+    val inputLabel = if(showWeight) stringResource(R.string.weight) else stringResource(R.string.percent)
 
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -331,7 +331,7 @@ fun IngredientEditField(
         OutlinedTextField(
             name,
             onValueChange = { onValueChange(Pair(it, null)) },
-            label = { Text("Ingredient") },
+            label = { Text(stringResource(R.string.ingredient)) },
             modifier = Modifier.weight(1f),
             keyboardOptions = KeyboardOptions.Default
                 .copy(imeAction = ImeAction.Done),
@@ -351,7 +351,7 @@ fun IngredientEditField(
         IconButton(onClick = onDeleteIngredient) {
             Icon(
                 Icons.Outlined.Delete,
-                "Delete",
+                stringResource(R.string.delete),
                 Modifier
                     .size(64.dp)
                     .padding(8.dp)
@@ -387,7 +387,7 @@ fun StepEditField(
             OutlinedTextField(
                 description,
                 onValueChange = { onValueChange(Pair(it, null)) },
-                label = { Text("Step description") },
+                label = { Text(stringResource(R.string.timer_description)) },
                 keyboardOptions = KeyboardOptions.Default
                     .copy(imeAction = ImeAction.Done),
                 isError = description == "",
@@ -397,8 +397,8 @@ fun StepEditField(
             OutlinedTextField(
                 duration,
                 onValueChange = { onValueChange(Pair(null, it)) },
-                label = { Text("Duration") },
-                trailingIcon = { Text("min") },
+                label = { Text(stringResource(R.string.duration)) },
+                trailingIcon = { Text(stringResource(R.string.min)) },
                 keyboardOptions = KeyboardOptions.Default
                     .copy(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
                 isError = duration == "",
@@ -411,7 +411,7 @@ fun StepEditField(
         ) {
             Icon(
                 Icons.Outlined.Delete,
-                "Delete",
+                stringResource(R.string.delete),
                 Modifier
                     .size(64.dp)
                     .padding(8.dp)
@@ -426,10 +426,10 @@ fun PreviewStepEditField()
 {
     BakersRecipesTheme() {
         StepEditField(
-            description = "Bollire la pasta",
+            description = "Test test test",
             duration = "12",
             onValueChange = {},
-            onDeleteStep = { /*TODO*/ }
+            onDeleteStep = {}
         )
     }
 }
