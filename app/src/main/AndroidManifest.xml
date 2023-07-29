@@ -5,6 +5,7 @@
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
 
     <application
         android:name=".BakersRecipesApplication"
@@ -27,10 +28,10 @@
                 <action android:name="com.example.yourapp.ALARM_ACTION" />
             </intent-filter>
         </receiver>
-        <receiver android:name=".receivers.BootCompletedReceiver" android:enabled="true" android:exported="true">
+        <receiver android:name=".receivers.BootCompletedReceiver"
+            android:enabled="true" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED"/>
-                <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </receiver>
         <activity

@@ -6,6 +6,7 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import androidx.core.app.NotificationCompat
 import com.example.bakersrecipes.receivers.AlarmReceiver
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
@@ -22,8 +23,12 @@ class AlarmUtil @Inject constructor(
                 CHANNEL_ID,
                 "Recipe Timers",
                 NotificationManager.IMPORTANCE_HIGH
-            )
-            channel.description = "Timers for recipe steps"
+            ).apply {
+                lockscreenVisibility = NotificationCompat.VISIBILITY_PUBLIC// allows to show notification on lock screen
+                enableVibration(true)
+                description = "Timers for recipe steps"
+                setBypassDnd(true)
+            }
 
             val notificationManager =
                 context.getSystemService(NotificationManager::class.java)
@@ -83,30 +88,7 @@ class AlarmUtil @Inject constructor(
         }
 
         context.sendBroadcast(intent)
-
-        //notificationManager.cancel(alarmId)
     }
-
-    /*
-        fun setAlarm(recipeId:Int, alarmId: Int, minutes: Int) {
-            val tag = "$WORK_TAG_PREFIX-$recipeId-$alarmId"
-            val alarmWorkRequest = OneTimeWorkRequestBuilder<AlarmWorker>()
-                .setInitialDelay(minutes.toLong(), java.util.concurrent.TimeUnit.MINUTES)
-                .addTag(tag)
-                .build()
-
-            WorkManager.getInstance(context).enqueueUniqueWork(
-                tag,
-                ExistingWorkPolicy.REPLACE,
-                alarmWorkRequest
-            )
-        }
-
-    fun cancelAlarm(recipeId:Int, alarmId: Int) {
-        val tag = "$WORK_TAG_PREFIX-$recipeId-$alarmId"
-        workManager.cancelAllWorkByTag(tag)
-        notificationManager.cancel(alarmId)
-    }*/
     companion object {
          val CHANNEL_ID = "recipe_step_timer"
     }

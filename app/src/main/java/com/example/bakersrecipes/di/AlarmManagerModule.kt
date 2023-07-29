@@ -2,9 +2,11 @@ package com.example.bakersrecipes.di
 
 import android.app.AlarmManager
 import android.content.Context
+import android.os.PowerManager
 import androidx.core.app.NotificationManagerCompat
 import androidx.work.WorkManager
-import com.example.bakersrecipes.data.RecipeDatabase
+import com.example.bakersrecipes.data.AlarmDao
+import com.example.bakersrecipes.data.StepDao
 import com.example.bakersrecipes.repositories.StepRepository
 import com.example.bakersrecipes.utils.AlarmUtil
 import dagger.Module
@@ -22,13 +24,20 @@ class AlarmManagerModule {
     fun provideAlarmManager(@ApplicationContext appContext: Context): AlarmManager {
         return appContext.getSystemService(Context.ALARM_SERVICE) as AlarmManager
     }
+
+    @Provides
+    @Singleton
+    fun providePowerManager(@ApplicationContext appContext: Context): PowerManager {
+        return appContext.getSystemService(Context.POWER_SERVICE) as PowerManager
+    }
     @Provides
     @Singleton
     fun provideStepRepository(
         alarmUtil: AlarmUtil,
-        recipeDatabase: RecipeDatabase
+        alarmDao: AlarmDao,
+        stepDao: StepDao
     ): StepRepository {
-        return StepRepository(alarmUtil, recipeDatabase)
+        return StepRepository(alarmUtil, alarmDao, stepDao)
     }
 
     @Provides

@@ -328,6 +328,7 @@ fun IngredientEditField(
                     .offset(y = 3.dp)
             ) }
         Spacer(modifier = Modifier.width(16.dp))
+        // Ingredient name text field
         OutlinedTextField(
             name,
             onValueChange = { onValueChange(Pair(it, null)) },
@@ -335,18 +336,21 @@ fun IngredientEditField(
             modifier = Modifier.weight(1f),
             keyboardOptions = KeyboardOptions.Default
                 .copy(imeAction = ImeAction.Done),
-            isError = name == ""
+            isError = name == "",
+            maxLines = 1
         )
         Spacer(modifier = Modifier.width(8.dp))
+        // Ingredient percent\weight text field
         OutlinedTextField(
             percent,
             onValueChange = { onValueChange(Pair(null, it)) },
             label = { Text(inputLabel) },
             trailingIcon = { Text(trailingIconString) },
-            modifier = Modifier.weight(1f),
+            modifier = Modifier.weight(0.5f),
             keyboardOptions = KeyboardOptions.Default
                 .copy(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
-            isError = percent == ""
+            isError = percent == "",
+            maxLines = 1
         )
         IconButton(onClick = onDeleteIngredient) {
             Icon(

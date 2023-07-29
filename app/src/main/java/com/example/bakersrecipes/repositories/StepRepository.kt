@@ -1,8 +1,9 @@
 package com.example.bakersrecipes.repositories
 
 import com.example.bakersrecipes.data.Alarm
-import com.example.bakersrecipes.data.RecipeDatabase
+import com.example.bakersrecipes.data.AlarmDao
 import com.example.bakersrecipes.data.Step
+import com.example.bakersrecipes.data.StepDao
 import com.example.bakersrecipes.data.StepState
 import com.example.bakersrecipes.data.fromDuration
 import com.example.bakersrecipes.utils.AlarmUtil
@@ -18,23 +19,32 @@ import javax.inject.Singleton
 @Singleton
 class StepRepository @Inject constructor(
     private val alarmUtil: AlarmUtil,
-    private val recipeDatabase: RecipeDatabase
+    private val alarmDao: AlarmDao,
+    private val stepDao: StepDao
 ) {
 private val stepStates: MutableMap<Int, MutableMap<Int, MutableStateFlow<StepState>>> = mutableMapOf()
-    // TODO: Or make them non suspending but launch coroutines
-    private val alarmDao = recipeDatabase.alarmDao()
 
     init {
         CoroutineScope(Dispatchers.IO).launch {
             importSavedAlarms()
         }
     }
+
+    suspend fun deleteStepsById(vararg stepIds: Int) =
+        stepDao.deleteStepsById(*stepIds)
+
+    suspend fun insertOrUpdateSteps(vararg steps: Step) =
+        stepDao.insertOrUpdateSteps(*steps)
+
+    /*
+        Resumes timers that have been saved on the persistent storage.
+     */
     suspend fun importSavedAlarms() {
         val alarms =
             alarmDao.getAllAlarms()
 
         alarms.groupBy { it.recipeId }.forEach { (recipeId, alarmsForRecipe) ->
-            val steps = recipeDatabase.stepDao().getStepsForRecipeAsList(recipeId)
+            val steps = stepDao.getStepsForRecipeAsList(recipeId)
             initializeStepStates(steps)
 
             for (alarm in alarmsForRecipe) {
@@ -47,6 +57,9 @@ private val stepStates: MutableMap<Int, MutableMap<Int, MutableStateFlow<StepSta
             }
         }
     }
+    /*
+        Initializes the state data classes representing timer state.
+     */
     suspend fun initializeStepStates(steps: List<Step>): Map<Int, StateFlow<StepState>> {
         if(steps.isNotEmpty())
         {
@@ -58,7 +71,7 @@ private val stepStates: MutableMap<Int, MutableMap<Int, MutableStateFlow<StepSta
 
             steps.forEach { step ->
                 step.id?.let { id ->
-                    val alarm = recipeDatabase.alarmDao().getAlarm(id, recipeId) // get Alarm from the database
+                    val alarm = alarmDao.getAlarm(id, recipeId) // get Alarm from the database
 
                     var scheduledTime: Long? = null
 
@@ -84,6 +97,9 @@ private val stepStates: MutableMap<Int, MutableMap<Int, MutableStateFlow<StepSta
         }
     }
 
+    /*
+        Resumes a previously scheduled timer whose alarm has been stopped.
+     */
     private fun resumeAlarm(recipeId: Int, stepId: Int, scheduledTime: Long) {
         stepStates[recipeId]?.let { stepStates ->
             stepStates[stepId]?.let { stepState ->
@@ -98,6 +114,9 @@ private val stepStates: MutableMap<Int, MutableMap<Int, MutableStateFlow<StepSta
             }
         }
     }
+    /*
+        Sets a timer, starting the alarm and persisting it in permanent storage.
+     */
     suspend fun setAlarm(recipeId:Int, stepId:Int) {
         stepStates[recipeId]?.let { stepStates ->
             stepStates[stepId]?.let { stepState ->
@@ -106,7 +125,7 @@ private val stepStates: MutableMap<Int, MutableMap<Int, MutableStateFlow<StepSta
 
                 stepState.value.scheduledTime?.let { scheduledTime ->
                     // save alarm to db
-                    recipeDatabase.alarmDao().insertOrUpdate(
+                    alarmDao.insertOrUpdate(
                         Alarm(
                             stepId = stepId,
                             recipeId = recipeId,
@@ -120,6 +139,9 @@ private val stepStates: MutableMap<Int, MutableMap<Int, MutableStateFlow<StepSta
         }
     }
 
+    /*
+        Cancels a scheduled timer.
+     */
     suspend fun cancelAlarm(recipeId:Int, stepId:Int, isAlarmRinging:Boolean = false) {
         stepStates[recipeId]?.let { stepStates ->
             stepStates[stepId]?.let { stepState ->
@@ -135,7 +157,7 @@ private val stepStates: MutableMap<Int, MutableMap<Int, MutableStateFlow<StepSta
             }
         }
 
-        // delete alarm from db
-        recipeDatabase.alarmDao().delete(stepId, recipeId)
+        // Delete alarm from db
+        alarmDao.delete(stepId, recipeId)
     }
 }

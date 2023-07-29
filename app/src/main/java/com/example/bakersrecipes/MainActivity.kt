@@ -9,7 +9,6 @@ import androidx.activity.compose.setContent
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
 import androidx.core.app.ActivityCompat
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -75,114 +74,209 @@ enum class BakersRecipesDestinations()
 @Composable
 fun BakersRecipeApp(viewModel: HomeViewModel = hiltViewModel()) {
     val navController = rememberNavController()
-
-    Box {
-        NavHost(
-            navController = navController,
-            startDestination = BakersRecipesDestinations.Home.name,
+    NavHost(navController, startDestination = BakersRecipesDestinations.Home.name) {
+        composable(
+            BakersRecipesDestinations.Home.name,
+            enterTransition = {
+                slideIntoContainer(
+                    AnimatedContentTransitionScope.SlideDirection.Left,
+                    animationSpec = tween(700)
+                )
+            },
+            exitTransition = {
+                slideOutOfContainer(
+                    AnimatedContentTransitionScope.SlideDirection.Left,
+                    animationSpec = tween(700)
+                )
+            },
+            popEnterTransition = {
+                slideIntoContainer(
+                    AnimatedContentTransitionScope.SlideDirection.Right,
+                    animationSpec = tween(700)
+                )
+            },
+            popExitTransition = {
+                slideOutOfContainer(
+                    AnimatedContentTransitionScope.SlideDirection.Right,
+                    animationSpec = tween(700)
+                )
+            },
         ) {
-            composable(
-                BakersRecipesDestinations.Home.name,
-                exitTransition = {
-                    slideOutOfContainer(
-                        AnimatedContentTransitionScope.SlideDirection.Right,
-                        animationSpec = tween(700)
-                    )
-                }
-            ) {
-                BakersRecipeHome(
-                    onAddRecipe = {
-                        navController.navigate(BakersRecipesDestinations.New.name)
-                    },
-                    onRecipeClicked = { recipeId ->
-                        navController.navigate(
-                            BakersRecipesDestinations.Detail.name + "/$recipeId"
-                        )
-                    },
-                    onSettingsButtonPressed = {
-                        navController.navigate(BakersRecipesDestinations.Settings.name)
-                    },
-                    viewModel = viewModel
-                )
-            }
-
-            composable(BakersRecipesDestinations.Settings.name) {
-                SettingsScreen(
-                    dataStore = viewModel.dataStore,
-                    onBackPressed = {
-                        navController.navigateUp()
-                    }
-                )
-            }
-
-            composable(
-                BakersRecipesDestinations.Detail.name + "/{recipeId}",
-                arguments = listOf(
-                    navArgument("recipeId") {
-                        type = NavType.IntType
-                    }
-                ),
-                enterTransition = {
-                    slideIntoContainer(
-                        AnimatedContentTransitionScope.SlideDirection.Left,
-                        animationSpec = tween(700)
+            BakersRecipeHome(
+                onAddRecipe = {
+                    navController.navigate(BakersRecipesDestinations.New.name)
+                },
+                onRecipeClicked = { recipeId ->
+                    navController.navigate(
+                        BakersRecipesDestinations.Detail.name + "/$recipeId"
                     )
                 },
-                exitTransition = {
-                    slideOutOfContainer(
-                        AnimatedContentTransitionScope.SlideDirection.Right,
-                        animationSpec = tween(700)
-                    )
+                onSettingsButtonPressed = {
+                    navController.navigate(BakersRecipesDestinations.Settings.name)
+                },
+                viewModel = viewModel
+            )
+        }
+
+        composable(
+            BakersRecipesDestinations.Settings.name,
+            enterTransition = {
+                slideIntoContainer(
+                    AnimatedContentTransitionScope.SlideDirection.Left,
+                    animationSpec = tween(700)
+                )
+            },
+            exitTransition = {
+                slideOutOfContainer(
+                    AnimatedContentTransitionScope.SlideDirection.Left,
+                    animationSpec = tween(700)
+                )
+            },
+            popEnterTransition = {
+                slideIntoContainer(
+                    AnimatedContentTransitionScope.SlideDirection.Right,
+                    animationSpec = tween(700)
+                )
+            },
+            popExitTransition = {
+                slideOutOfContainer(
+                    AnimatedContentTransitionScope.SlideDirection.Right,
+                    animationSpec = tween(700)
+                )
+            },
+        ) {
+            SettingsScreen(
+                dataStore = viewModel.dataStore,
+                onBackPressed = {
+                    navController.navigateUp()
                 }
-            ) {
-                val detailViewModel: DetailViewModel = hiltViewModel()
-                RecipeDetailScreen(
-                    detailViewModel,
-                    onNavigateUp = { navController.navigateUp() },
-                    onEditRecipe = { recipeId ->
-                        navController.navigate(BakersRecipesDestinations.Edit.name + "/$recipeId")
-                    }
-                )
-            }
+            )
+        }
 
-            composable(
-                BakersRecipesDestinations.Edit.name + "/{recipeId}",
-                arguments = listOf(
-                    navArgument("recipeId") {
-                        type = NavType.IntType
-                    }
+        composable(
+            BakersRecipesDestinations.Detail.name + "/{recipeId}",
+            arguments = listOf(
+                navArgument("recipeId") {
+                    type = NavType.IntType
+                }
+            ),
+            enterTransition = {
+                slideIntoContainer(
+                    AnimatedContentTransitionScope.SlideDirection.Left,
+                    animationSpec = tween(700)
                 )
-            ) {
-                val editRecipeViewModel: EditRecipeViewModel = hiltViewModel()
-
-                EditRecipeScreen(
-                    editRecipeViewModel,
-                    { navController.navigateUp() },
-                    { navController.navigateUp() },
-                    onRecipeDelete = {
-                        navController.navigate(BakersRecipesDestinations.Home.name)
-                    }
+            },
+            exitTransition = {
+                slideOutOfContainer(
+                    AnimatedContentTransitionScope.SlideDirection.Left,
+                    animationSpec = tween(700)
                 )
-            }
-
-            composable(
-                BakersRecipesDestinations.New.name
-            ) {
-                val editRecipeViewModel: EditRecipeViewModel = hiltViewModel()
-
-                EditRecipeScreen(
-                    editRecipeViewModel,
-                    { navController.navigateUp() },
-                    { navController.navigateUp() },
-                    onRecipeDelete = {
-                        navController.navigate(BakersRecipesDestinations.Home.name)
-                    } // TODO: avoid repeated code
+            },
+            popEnterTransition = {
+                slideIntoContainer(
+                    AnimatedContentTransitionScope.SlideDirection.Right,
+                    animationSpec = tween(700)
                 )
-            }
+            },
+            popExitTransition = {
+                slideOutOfContainer(
+                    AnimatedContentTransitionScope.SlideDirection.Right,
+                    animationSpec = tween(700)
+                )
+            },
+        ) {
+            val detailViewModel: DetailViewModel = hiltViewModel()
+            RecipeDetailScreen(
+                detailViewModel,
+                onNavigateUp = { navController.navigateUp() },
+                onEditRecipe = { recipeId ->
+                    navController.navigate(BakersRecipesDestinations.Edit.name + "/$recipeId")
+                }
+            )
+        }
+
+        composable(
+            BakersRecipesDestinations.Edit.name + "/{recipeId}",
+            arguments = listOf(
+                navArgument("recipeId") {
+                    type = NavType.IntType
+                }
+            ),
+            enterTransition = {
+                slideIntoContainer(
+                    AnimatedContentTransitionScope.SlideDirection.Left,
+                    animationSpec = tween(700)
+                )
+            },
+            exitTransition = {
+                slideOutOfContainer(
+                    AnimatedContentTransitionScope.SlideDirection.Left,
+                    animationSpec = tween(700)
+                )
+            },
+            popEnterTransition = {
+                slideIntoContainer(
+                    AnimatedContentTransitionScope.SlideDirection.Right,
+                    animationSpec = tween(700)
+                )
+            },
+            popExitTransition = {
+                slideOutOfContainer(
+                    AnimatedContentTransitionScope.SlideDirection.Right,
+                    animationSpec = tween(700)
+                )
+            },
+        ) {
+            val editRecipeViewModel: EditRecipeViewModel = hiltViewModel()
+            EditRecipeScreen(
+                editRecipeViewModel,
+                { navController.navigateUp() },
+                { navController.navigateUp() },
+                onRecipeDelete = {
+                    navController.navigate(BakersRecipesDestinations.Home.name)
+                }
+            )
+        }
+
+        composable(
+            BakersRecipesDestinations.New.name,
+            enterTransition = {
+                slideIntoContainer(
+                    AnimatedContentTransitionScope.SlideDirection.Left,
+                    animationSpec = tween(700)
+                )
+            },
+            exitTransition = {
+                slideOutOfContainer(
+                    AnimatedContentTransitionScope.SlideDirection.Left,
+                    animationSpec = tween(700)
+                )
+            },
+            popEnterTransition = {
+                slideIntoContainer(
+                    AnimatedContentTransitionScope.SlideDirection.Right,
+                    animationSpec = tween(700)
+                )
+            },
+            popExitTransition = {
+                slideOutOfContainer(
+                    AnimatedContentTransitionScope.SlideDirection.Right,
+                    animationSpec = tween(700)
+                )
+            },
+        ) {
+            val editRecipeViewModel: EditRecipeViewModel = hiltViewModel()
+            EditRecipeScreen(
+                editRecipeViewModel,
+                { navController.navigateUp() },
+                { navController.navigateUp() },
+                onRecipeDelete = {
+                    navController.navigate(BakersRecipesDestinations.Home.name)
+                } // TODO: avoid repeated code
+            )
         }
     }
 }
-
 
 
 

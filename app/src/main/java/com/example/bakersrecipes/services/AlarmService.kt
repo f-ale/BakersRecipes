@@ -4,9 +4,11 @@ import android.annotation.SuppressLint
 import android.app.PendingIntent
 import android.app.Service
 import android.content.Intent
+import android.media.AudioAttributes
 import android.media.MediaPlayer
 import android.media.RingtoneManager
 import android.os.IBinder
+import android.os.PowerManager
 import androidx.core.app.NotificationCompat
 import com.example.bakersrecipes.R
 import com.example.bakersrecipes.receivers.AlarmReceiver
@@ -23,9 +25,21 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class AlarmService: Service() {
     @Inject lateinit var stepRepository: StepRepository
+    @Inject lateinit var powerManager: PowerManager
+    private var wakeLock: PowerManager.WakeLock? = null
     private val mediaPlayers: MutableMap<Pair<Int, Int>, MediaPlayer> = mutableMapOf()
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+    override fun onCreate() {
+        super.onCreate()
+
+        wakeLock = powerManager.run {
+            newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "BakersRecipes:Alarm").apply {
+                acquire(10*60*1000L /*10 minutes*/)
+            }
+        }
+    }
 
     @SuppressLint("MissingPermission")
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -80,6 +94,12 @@ class AlarmService: Service() {
             if (!mediaPlayers.containsKey(Pair(alarmId, recipeId))) {
                 val alarmSound = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
                 val mediaPlayer = MediaPlayer.create(this, alarmSound)
+                mediaPlayer.setAudioAttributes(
+                    AudioAttributes.Builder()
+                        .setUsage(AudioAttributes.USAGE_ALARM) // This usage is for alarms
+                        .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                        .build()
+                )
                 mediaPlayer.isLooping = true
                 mediaPlayer.start()
 
@@ -102,6 +122,8 @@ class AlarmService: Service() {
         serviceScope.cancel()
         mediaPlayers.stopAll()
         mediaPlayers.clear()
+        wakeLock?.release()
+        wakeLock = null
     }
 
     override fun onBind(intent: Intent): IBinder? {

@@ -7,14 +7,14 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.room.withTransaction
 import com.example.bakersrecipes.data.Ingredient
 import com.example.bakersrecipes.data.Recipe
-import com.example.bakersrecipes.data.RecipeDatabase
 import com.example.bakersrecipes.data.Step
 import com.example.bakersrecipes.data.datatypes.Percentage
 import com.example.bakersrecipes.data.datatypes.toPercentage
 import com.example.bakersrecipes.data.relations.RecipeWithIngredients
+import com.example.bakersrecipes.repositories.RecipeRepository
+import com.example.bakersrecipes.repositories.StepRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -23,10 +23,12 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlin.math.roundToInt
 
 @HiltViewModel
 class EditRecipeViewModel @Inject constructor(
-    private val db:RecipeDatabase,
+    private val recipeRepository: RecipeRepository,
+    private val stepRepository: StepRepository,
     dataStore: DataStore<Preferences>,
     savedStateHandle: SavedStateHandle
 ): ViewModel() {
@@ -36,16 +38,26 @@ class EditRecipeViewModel @Inject constructor(
 
     val editRecipeState: StateFlow<EditRecipeState> = _editRecipeState.asStateFlow()
 
-    val weightUnit = dataStore.data.map { it ->
-        if(it[booleanPreferencesKey("weight_unit")] == false)
+    /*
+        Gets the preferred units from user preferences
+     */
+    val weightUnit = dataStore.data.map { preference ->
+        if(preference[booleanPreferencesKey("weight_unit")] == false)
             "g"
         else
             "oz"
     }
 
-    val showWeight = dataStore.data.map {
-        it[booleanPreferencesKey("show_weight")] ?: false
+    /*
+        Gets the show weight preference
+     */
+    val showWeight = dataStore.data.map { preference ->
+        preference[booleanPreferencesKey("show_weight")] ?: false
     }
+
+    /*
+        Initializes the state representation of the edit recipe form
+     */
     init {
         if (recipeId != null) {
             viewModelScope.launch {
@@ -65,16 +77,24 @@ class EditRecipeViewModel @Inject constructor(
             }
         }
     }
+
+    /*
+        Deletes the current recipe
+     */
     fun deleteRecipe()
     {
         viewModelScope.launch {
             recipe?.recipe?.let {
-                db.recipeDao().delete(it)
+                recipeRepository.deleteRecipe(it)
             }
         }
     }
+    /*
+        Saves the user's changes according to the edited form
+     */
     fun saveChanges(): Boolean
     {
+        // Check the form is valid
         val validForm =
             editRecipeState.value.title.isNullOrEmpty().not() &&
             editRecipeState.value.description.isNullOrEmpty().not() &&
@@ -86,12 +106,14 @@ class EditRecipeViewModel @Inject constructor(
 
         if(validForm) {
             viewModelScope.launch {
-                db.withTransaction {
+                // Launch saving operations as transaction so they can be rolled back on error
+                recipeRepository.withTransaction {
                     var recipeId: Int? = recipe?.recipe?.id
                     val recipeName = editRecipeState.value.title ?: "Untitled"
                     val recipeImage = editRecipeState.value.image
                     val recipeDescription = editRecipeState.value.description
 
+                    // Save the recipe
                     val newRecipe =
                         Recipe(
                             id = recipeId,
@@ -100,24 +122,25 @@ class EditRecipeViewModel @Inject constructor(
                             description = recipeDescription
                         )
 
-                    db.recipeDao().insertOrUpdate(newRecipe)
+                    recipeRepository.insertOrUpdate(newRecipe)
                     // TODO: Replace Room's upsert with custom method that returns new object id
 
                     if(recipeId == null)
                     {
-                        recipeId = db.recipeDao().getRecipeIdByName(recipeName) // TODO: Unclean
+                        recipeId = recipeRepository.getRecipeIdByName(recipeName) // TODO: Unclean
                         // TODO: this will be useless when we replace room upsert with something better
                     }
 
-                    val ingredientDao = db.ingredientDao()
-
+                    // Remove ingredients that the user deleted
                     val ingredientsToRemove = editRecipeState.value
                         .removedIngredients.map{ it.ingredientId ?: -1 }
 
-                    ingredientDao.deleteIngredientsById(*ingredientsToRemove.toIntArray())
+                    recipeRepository.deleteIngredientsById(*ingredientsToRemove.toIntArray())
 
+                    // Save ingredients to database
                     if(editRecipeState.value.ingredients.isNotEmpty())
                     {
+                        // Make sure the highest percentage is 100%
                         val maxPercentage = editRecipeState.value.ingredients.maxOf {
                             it.percent?.toPercentage(true) ?: "0".toPercentage(true)
                         }
@@ -135,19 +158,18 @@ class EditRecipeViewModel @Inject constructor(
                             )
                         }
 
-                        ingredientDao.insertOrUpdateIngredients(*ingredientsToUpdate.toTypedArray())
+                        recipeRepository.insertOrUpdateIngredients(*ingredientsToUpdate.toTypedArray())
                     }
 
-                    val stepDao = db.stepDao()
+                    // Delete timers that the user has removed
                     val stepsToRemove = editRecipeState.value
                         .removedSteps.map{ it.stepId ?: -1 }
 
-                    stepDao.deleteStepsById(*stepsToRemove.toIntArray())
+                    stepRepository.deleteStepsById(*stepsToRemove.toIntArray())
 
+                    // Save timers to database
                     if(editRecipeState.value.steps.isNotEmpty())
                     {
-
-
                         val stepsToUpdate = editRecipeState.value.steps.map {
                                 field ->
                             Step(
@@ -159,13 +181,16 @@ class EditRecipeViewModel @Inject constructor(
 
                         }
 
-                       stepDao.insertOrUpdateSteps(*stepsToUpdate.toTypedArray())
+                       stepRepository.insertOrUpdateSteps(*stepsToUpdate.toTypedArray())
                     }
                 }
             }
         }
         return validForm
     }
+    /*
+        Adds a new ingredient field to the form
+     */
     fun newIngredient()
     {
         _editRecipeState.value = _editRecipeState.value.copy(
@@ -173,6 +198,9 @@ class EditRecipeViewModel @Inject constructor(
                 EditRecipeIngredientField()).toList()
         )
     }
+    /*
+        Adds a new timer field to the form
+     */
     fun newStep()
     {
         _editRecipeState.value = _editRecipeState.value.copy(
@@ -180,6 +208,9 @@ class EditRecipeViewModel @Inject constructor(
                     EditRecipeStepField()).toList()
         )
     }
+    /*
+        Update the image URI on the form
+     */
     fun updateImage(uri: Uri?)
     {
         if(uri != null)
@@ -187,9 +218,15 @@ class EditRecipeViewModel @Inject constructor(
             _editRecipeState.value = _editRecipeState.value.copy(image = uri)
         }
     }
+    /*
+        Update the ingredient's properties on the form
+     */
     fun updateIngredient(index: Int, new:EditRecipeIngredientField)
     {
-        if(isStringAValidBigDecimalOrEmptyOrNull(new.percent))
+        if(isStringAValidBigDecimalOrEmptyOrNull(new.percent)
+            && (new.percent?.length ?: 0) <= 3
+            && (new.name?.length ?: 0) <= 30
+        )
         {
             val mutableIngredientList = _editRecipeState.value.ingredients.toMutableList()
 
@@ -200,9 +237,14 @@ class EditRecipeViewModel @Inject constructor(
             )
         }
     }
+    /*
+        Update the timer's properties on the form
+     */
     fun updateStep(index: Int, new:EditRecipeStepField)
     {
-        if(isStringAValidBigDecimalOrEmptyOrNull(new.duration))
+        if(isStringAValidBigDecimalOrEmptyOrNull(new.duration)
+            && (new.duration?.length ?: 0) < 9
+        )
         {
             val mutableStepList = _editRecipeState.value.steps.toMutableList()
 
@@ -213,6 +255,9 @@ class EditRecipeViewModel @Inject constructor(
             )
         }
     }
+    /*
+        Returns true if the string is a valid big decimal, empty, or null
+     */
     private fun isStringAValidBigDecimalOrEmptyOrNull(number: String?): Boolean
     {
         if(number == null || number == "")
@@ -225,14 +270,23 @@ class EditRecipeViewModel @Inject constructor(
             false
         }
     }
+    /*
+        Updates the recipe's name on the form state
+     */
     fun updateName(newName:String)
     {
         _editRecipeState.value = _editRecipeState.value.copy(title = newName)
     }
+    /*
+        Update the recipe's description on the form state
+     */
     fun updateDescription(newDescription:String)
     {
         _editRecipeState.value = _editRecipeState.value.copy(description = newDescription)
     }
+    /*
+        Removes an ingredient from the form state
+     */
     fun removeIngredient(ingredient:EditRecipeIngredientField)
     {
         val mutableIngredientList = _editRecipeState.value.ingredients.toMutableList()
@@ -246,6 +300,9 @@ class EditRecipeViewModel @Inject constructor(
             removedIngredients = mutableRemovedIngredientList
         )
     }
+    /*
+        Removes a timer from the form state
+     */
     fun removeStep(step:EditRecipeStepField)
     {
         val mutableStepList = _editRecipeState.value.steps.toMutableList()
@@ -260,10 +317,12 @@ class EditRecipeViewModel @Inject constructor(
             // TODO: Use a single list for both, with a "deleted" flag on the data, and then filter the data according to its use?
         )
     }
+    /*
+        Converts the Ingredient db entity to the corresponding form state
+     */
     private fun ingredientsToIngredientField(ingredients: List<Ingredient>): List<EditRecipeIngredientField>
     {
-        return ingredients.sortedBy{it.id}.map {
-            ingredient ->
+        return ingredients.sortedBy{it.id}.map { ingredient ->
             EditRecipeIngredientField(
                 name = ingredient.name,
                 percent = ingredient.percent.toString(),
@@ -271,18 +330,22 @@ class EditRecipeViewModel @Inject constructor(
             )
         }
     }
+    /*
+        Converts the timer db entity to the corresponding state form data
+     */
     private fun stepsToStepField(steps: List<Step>): List<EditRecipeStepField>
     {
-        return steps.sortedBy{it.id}.map {
-
-                step ->
+        return steps.sortedBy{it.id}.map { step ->
             EditRecipeStepField(
                 description = step.description,
-                duration = step.duration.toString(),
+                duration = step.duration.roundToInt().toString(),
                 stepId = step.id,
             )
         }
     }
+    /*
+        Gets recipe and ingredients by id
+     */
     private fun getRecipeWithIngredientsById(recipeId: Int): Flow<RecipeWithIngredients?> =
-        db.recipeDao().getRecipeWithIngredientsById(recipeId)
+        recipeRepository.getRecipeWithIngredientsById(recipeId)
 }
