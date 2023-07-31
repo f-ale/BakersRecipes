@@ -1,4 +1,4 @@
-<img src="app/src/main/ic_launcher-web.png" align="left"
+<img src="github-assets/ic_launcher-web.png" align="left"
 width="100">
 # Baker's Recipes
 <img src="github-assets/bakersrecipes-screenshot.jpg" align="right" width="250">
