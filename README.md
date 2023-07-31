@@ -1,7 +1,7 @@
 <img src="app/src/main/ic_launcher-web.png" align="left"
 width="100">
 # Baker's Recipes
-<img src="github-assets/Bakers-Recipes.png" align="right" width="250">
+<img src="github-assets/bakersrecipes-screenshot.jpg" align="right" width="250">
 <br>
 Baker's Recipes is a recipe book app for Android using Baker's Percentages. 
 
